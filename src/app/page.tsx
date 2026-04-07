@@ -1,27 +1,28 @@
 import Link from "next/link";
 import { UtensilsCrossed, MapPin, Star } from "lucide-react";
-import { getCanteens } from "@/lib/supabase";
+import { getCanteens, getCanteenRating } from "@/lib/supabase";
+import Navbar from "@/components/Navbar";
 
 export default async function Home() {
   const canteens = await getCanteens();
+  
+  // 并行获取所有食堂的评分
+  const canteenData = await Promise.all(
+    canteens.map(async (canteen) => {
+      const rating = await getCanteenRating(canteen.id);
+      return { ...canteen, rating };
+    })
+  );
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* 头部 */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-3">
-            <UtensilsCrossed className="w-8 h-8 text-blue-500" />
-            <h1 className="text-2xl font-bold text-gray-900">学生食堂评价系统</h1>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* 主内容区 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">食堂列表</h2>
 
-        {canteens.length === 0 ? (
+        {canteenData.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <UtensilsCrossed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">暂无食堂数据</p>
@@ -29,7 +30,7 @@ export default async function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {canteens.map((canteen) => (
+            {canteenData.map((canteen) => (
               <Link
                 key={canteen.id}
                 href={`/canteen/${canteen.id}`}
@@ -73,7 +74,9 @@ export default async function Home() {
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm text-gray-600">暂无评分</span>
+                      <span className="text-sm text-gray-600">
+                        {canteen.rating > 0 ? canteen.rating.toFixed(1) : "暂无评分"}
+                      </span>
                     </div>
                     <span className="text-blue-500 text-sm font-medium hover:text-blue-600">
                       查看详情 →
