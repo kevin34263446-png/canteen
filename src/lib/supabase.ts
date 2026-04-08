@@ -22,6 +22,7 @@ export type Review = {
   rating: number;
   content: string;
   user_name: string;
+  is_anonymous: boolean;
   created_at: string;
 };
 
@@ -117,11 +118,11 @@ export async function getCanteenRating(canteenId: string): Promise<number> {
     .eq("canteen_id", canteenId)
     .single();
 
-  if (error || !data?.avg_rating) {
+  if (error || !data) {
     return 0;
   }
 
-  return Number(data.avg_rating);
+  return Number((data as any).avg_rating || 0);
 }
 
 // 用户注册
