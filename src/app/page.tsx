@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { UtensilsCrossed, MapPin, Star } from "lucide-react";
 import { getCanteens, getCanteenRating } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
@@ -39,10 +40,11 @@ export default async function Home() {
                 {/* 食堂图片 */}
                 <div className="h-48 bg-gray-200 relative">
                   {canteen.image_url ? (
-                    <img
+                    <Image
                       src={canteen.image_url}
                       alt={canteen.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">

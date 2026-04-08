@@ -1,6 +1,7 @@
 "use client";
 
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { ArrowLeft, MapPin, Star, Clock, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -97,10 +98,11 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
           <div className="h-64 md:h-80 bg-gray-200 relative">
             {canteen.image_url ? (
-              <img
+              <Image
                 src={canteen.image_url}
                 alt={canteen.name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
