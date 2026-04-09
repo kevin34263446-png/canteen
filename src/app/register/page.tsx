@@ -11,6 +11,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [userType, setUserType] = useState<string>("student");
+  const [studentId, setStudentId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { register } = useAuth();
@@ -19,7 +21,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !studentId) {
       setError("请填写完整信息");
       return;
     }
@@ -29,11 +31,22 @@ export default function RegisterPage() {
       return;
     }
 
+    // 验证学号/工号格式
+    if (userType === "student" && studentId.length !== 10) {
+      setError("学号必须为10位");
+      return;
+    }
+
+    if (userType === "staff" && studentId.length !== 8) {
+      setError("工号必须为8位");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const { error: registerError } = await register(email, password, name);
+      const { error: registerError } = await register(email, password, name, userType, studentId);
       if (registerError) {
         setError(registerError);
       } else {
@@ -108,6 +121,63 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="请输入邮箱"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                用户类型
+              </label>
+              <div className="flex space-x-4">
+                <div className="flex items-center">
+                  <input
+                    id="student"
+                    name="userType"
+                    type="radio"
+                    value="student"
+                    checked={userType === "student"}
+                    onChange={() => setUserType("student")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label htmlFor="student" className="ml-2 block text-sm text-gray-900">
+                    学生
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="staff"
+                    name="userType"
+                    type="radio"
+                    value="staff"
+                    checked={userType === "staff"}
+                    onChange={() => setUserType("staff")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label htmlFor="staff" className="ml-2 block text-sm text-gray-900">
+                    教职工
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-1">
+                {userType === "student" ? "学号" : "工号"}
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="studentId"
+                  name="studentId"
+                  type="text"
+                  required
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder={userType === "student" ? "请输入10位学号" : "请输入8位工号"}
                 />
               </div>
             </div>

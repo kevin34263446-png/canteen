@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState<string>("student");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuth();
@@ -26,7 +27,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const { error: loginError } = await login(email, password);
+      const { error: loginError } = await login(email, password, userType);
       if (loginError) {
         setError(loginError);
       } else {
@@ -62,6 +63,42 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                用户类型
+              </label>
+              <div className="flex space-x-4">
+                <div className="flex items-center">
+                  <input
+                    id="student"
+                    name="userType"
+                    type="radio"
+                    value="student"
+                    checked={userType === "student"}
+                    onChange={() => setUserType("student")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label htmlFor="student" className="ml-2 block text-sm text-gray-900">
+                    学生
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    id="staff"
+                    name="userType"
+                    type="radio"
+                    value="staff"
+                    checked={userType === "staff"}
+                    onChange={() => setUserType("staff")}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <label htmlFor="staff" className="ml-2 block text-sm text-gray-900">
+                    教职工
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 邮箱

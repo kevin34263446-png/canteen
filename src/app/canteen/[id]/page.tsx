@@ -2,10 +2,10 @@
 
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, MapPin, Star, Clock, X } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Clock, X, Heart } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review } from "@/lib/supabase";
+import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite } from "@/lib/supabase";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
 
@@ -21,11 +21,20 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   const [avgRating, setAvgRating] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
+  const [isFavorited, setIsFavorited] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // 获取用户 ID
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          const decoded = JSON.parse(atob(token));
+          setUserId(decoded.userId);
+        }
+
         const [canteenData, reviewsData, ratingData] = await Promise.all([
           getCanteenById(params.id),
           getCanteenReviews(params.id),
@@ -39,6 +48,12 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         setCanteen(canteenData);
         setReviews(reviewsData);
         setAvgRating(ratingData);
+
+        // 检查是否已收藏
+        if (userId) {
+          const favorited = await isFavorite(userId, params.id);
+          setIsFavorited(favorited);
+        }
       } catch (error) {
         console.error("获取数据失败:", error);
       } finally {
@@ -47,7 +62,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     };
 
     fetchData();
-  }, [params.id]);
+  }, [params.id, userId]);
 
   const handleReviewSuccess = async () => {
     // 重新加载评价数据
@@ -58,6 +73,28 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     setReviews(reviewsData);
     setAvgRating(ratingData);
     setShowReviewForm(false);
+  };
+
+  const handleFavorite = async () => {
+    if (!userId) {
+      // 未登录，跳转到登录页面
+      window.location.href = '/login';
+      return;
+    }
+
+    if (isFavorited) {
+      // 取消收藏
+      const success = await removeFavorite(userId, params.id);
+      if (success) {
+        setIsFavorited(false);
+      }
+    } else {
+      // 添加收藏
+      const success = await addFavorite(userId, params.id);
+      if (success) {
+        setIsFavorited(true);
+      }
+    }
   };
 
   if (loading) {
@@ -131,6 +168,13 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 <span className="font-semibold">{avgRating.toFixed(1)}</span>
                 <span className="text-gray-500">({reviews.length} 条评价)</span>
               </div>
+              <button
+                onClick={handleFavorite}
+                className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors"
+              >
+                <Heart className={`w-5 h-5 ${isFavorited ? 'text-red-500 fill-red-500' : ''}`} />
+                <span>{isFavorited ? '已收藏' : '收藏'}</span>
+              </button>
             </div>
 
             {canteen.description && (

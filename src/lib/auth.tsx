@@ -7,8 +7,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ error: string | null }>;
-  register: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
+  login: (email: string, password: string, userType: string) => Promise<{ error: string | null }>;
+  register: (email: string, password: string, name: string, userType: string, studentId: string) => Promise<{ error: string | null }>;
   logout: () => void;
 }
 
@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await loginApi(email, password);
+  const login = async (email: string, password: string, userType: string) => {
+    const response = await loginApi(email, password, userType);
     
     if (response.error) {
       return { error: response.error };
@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const response = await registerApi(email, password, name);
+  const register = async (email: string, password: string, name: string, userType: string, studentId: string) => {
+    const response = await registerApi(email, password, name, userType, studentId);
     
     if (response.error) {
       return { error: response.error };

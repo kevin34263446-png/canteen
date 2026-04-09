@@ -31,6 +31,8 @@ export type User = {
   id: string;
   email: string;
   name: string;
+  user_type: string;
+  student_id: string;
   created_at: string;
   updated_at: string;
 };
@@ -129,7 +131,9 @@ export async function getCanteenRating(canteenId: string): Promise<number> {
 export async function register(
   email: string,
   password: string,
-  name: string
+  name: string,
+  userType: string,
+  studentId: string
 ): Promise<AuthResponse> {
   try {
     // 检查邮箱是否已存在
@@ -147,6 +151,21 @@ export async function register(
       };
     }
 
+    // 检查学号/工号是否已存在
+    const { data: existingStudentId } = await supabase
+      .from("users")
+      .select("id")
+      .eq("student_id", studentId)
+      .single();
+
+    if (existingStudentId) {
+      return {
+        user: null,
+        token: null,
+        error: userType === "student" ? "学号已被注册" : "工号已被注册",
+      };
+    }
+
     // 创建新用户
     const { data: newUser, error } = await supabase
       .from("users")
@@ -154,8 +173,10 @@ export async function register(
         email,
         password, // 注意：实际项目中应该哈希密码
         name,
+        user_type: userType,
+        student_id: studentId,
       })
-      .select("id, email, name, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, created_at, updated_at")
       .single();
 
     if (error) {
@@ -184,13 +205,14 @@ export async function register(
 }
 
 // 用户登录
-export async function login(email: string, password: string): Promise<AuthResponse> {
+export async function login(email: string, password: string, userType: string): Promise<AuthResponse> {
   try {
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, email, name, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, created_at, updated_at")
       .eq("email", email)
       .eq("password", password) // 注意：实际项目中应该验证哈希密码
+      .eq("user_type", userType)
       .single();
 
     if (error || !user) {
@@ -222,7 +244,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
 export async function getUserById(userId: string): Promise<User | null> {
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, name, created_at, updated_at")
+    .select("id, email, name, user_type, student_id, created_at, updated_at")
     .eq("id", userId)
     .single();
 
@@ -232,4 +254,105 @@ export async function getUserById(userId: string): Promise<User | null> {
   }
 
   return data;
+}
+
+// 获取用户评价历史
+export async function getUserReviews(userId: string): Promise<Review[]> {
+  // 首先获取用户信息
+  const user = await getUserById(userId);
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("user_name", user.name)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("获取用户评价历史失败:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 添加收藏
+export async function addFavorite(userId: string, canteenId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("favorites")
+    .insert({
+      user_id: userId,
+      canteen_id: canteenId
+    });
+
+  if (error) {
+    console.error("添加收藏失败:", error);
+    return false;
+  }
+
+  return true;
+}
+
+// 取消收藏
+export async function removeFavorite(userId: string, canteenId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("favorites")
+    .delete()
+    .eq("user_id", userId)
+    .eq("canteen_id", canteenId);
+
+  if (error) {
+    console.error("取消收藏失败:", error);
+    return false;
+  }
+
+  return true;
+}
+
+// 检查是否已收藏
+export async function isFavorite(userId: string, canteenId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("canteen_id", canteenId)
+    .single();
+
+  if (error || !data) {
+    return false;
+  }
+
+  return true;
+}
+
+// 获取用户收藏的食堂
+export async function getUserFavorites(userId: string): Promise<Canteen[]> {
+  const { data, error } = await supabase
+    .from("favorites")
+    .select("canteen_id")
+    .eq("user_id", userId);
+
+  if (error || !data) {
+    return [];
+  }
+
+  // 获取所有收藏的食堂详情
+  const canteenIds = data.map((item: any) => item.canteen_id);
+  if (canteenIds.length === 0) {
+    return [];
+  }
+
+  const { data: canteens, error: canteensError } = await supabase
+    .from("canteens")
+    .select("*")
+    .in("id", canteenIds);
+
+  if (canteensError) {
+    console.error("获取收藏食堂失败:", canteensError);
+    return [];
+  }
+
+  return canteens || [];
 }
