@@ -356,3 +356,31 @@ export async function getUserFavorites(userId: string): Promise<Canteen[]> {
 
   return canteens || [];
 }
+
+// 获取食堂排行榜（按评分排序）
+export async function getCanteenRanking(): Promise<(Canteen & { rating: number })[]> {
+  // 首先获取所有食堂
+  const { data: canteens, error } = await supabase
+    .from("canteens")
+    .select("*");
+
+  if (error || !canteens) {
+    return [];
+  }
+
+  // 获取每个食堂的评分
+  const canteensWithRating = await Promise.all(
+    canteens.map(async (canteen) => {
+      const rating = await getCanteenRating(canteen.id);
+      return {
+        ...canteen,
+        rating
+      };
+    })
+  );
+
+  // 按评分排序，降序
+  canteensWithRating.sort((a, b) => b.rating - a.rating);
+
+  return canteensWithRating;
+}

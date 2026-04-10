@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { User, getUserById } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
-import { UserCircle, Edit, History, Heart, Settings, LogOut } from "lucide-react";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -45,7 +44,7 @@ export default function ProfilePage() {
       <main className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <UserCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <span className="text-4xl text-gray-300 block mb-4">👤</span>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">请先登录</h2>
           <p className="text-gray-500 mb-6">登录后查看个人中心</p>
           <a 
@@ -68,7 +67,7 @@ export default function ProfilePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-              <UserCircle className="w-10 h-10 text-blue-500" />
+              <span className="text-4xl text-blue-500">👤</span>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
@@ -79,7 +78,7 @@ export default function ProfilePage() {
               </p>
               <div className="mt-4">
                 <button className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors">
-                  <Edit className="w-4 h-4" />
+                  <span>✏️</span>
                   <span>编辑资料</span>
                 </button>
               </div>
@@ -98,7 +97,7 @@ export default function ProfilePage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                <History className="w-5 h-5 text-yellow-500" />
+                <span className="text-yellow-500">📋</span>
               </div>
               <span className="text-gray-900 font-medium">评价历史</span>
             </div>
@@ -116,7 +115,7 @@ export default function ProfilePage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <Heart className="w-5 h-5 text-red-500" />
+                <span className="text-red-500">❤️</span>
               </div>
               <span className="text-gray-900 font-medium">我的收藏</span>
             </div>
@@ -134,7 +133,7 @@ export default function ProfilePage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <Settings className="w-5 h-5 text-gray-500" />
+                <span className="text-gray-500">⚙️</span>
               </div>
               <span className="text-gray-900 font-medium">设置</span>
             </div>
@@ -156,7 +155,7 @@ export default function ProfilePage() {
           >
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <LogOut className="w-5 h-5 text-red-500" />
+                <span className="text-red-500">🚪</span>
               </div>
               <span className="text-red-500 font-medium">退出登录</span>
             </div>

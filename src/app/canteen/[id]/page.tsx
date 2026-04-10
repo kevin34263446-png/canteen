@@ -2,7 +2,6 @@
 
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, MapPin, Star, Clock, X, Heart } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite } from "@/lib/supabase";
@@ -123,7 +122,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
             href="/"
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <span>←</span>
             <span>返回列表</span>
           </Link>
         </div>
@@ -155,16 +154,16 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
             <div className="flex flex-wrap gap-4 mb-6">
               {canteen.location && (
                 <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-5 h-5" />
+                  <span>📍</span>
                   <span>{canteen.location}</span>
                 </div>
               )}
               <div className="flex items-center gap-2 text-gray-600">
-                <Clock className="w-5 h-5" />
+                <span>⏰</span>
                 <span>营业时间: 06:30 - 22:00</span>
               </div>
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                <span className="text-yellow-400">★</span>
                 <span className="font-semibold">{avgRating.toFixed(1)}</span>
                 <span className="text-gray-500">({reviews.length} 条评价)</span>
               </div>
@@ -172,7 +171,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 onClick={handleFavorite}
                 className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors"
               >
-                <Heart className={`w-5 h-5 ${isFavorited ? 'text-red-500 fill-red-500' : ''}`} />
+                <span className={`${isFavorited ? 'text-red-500' : ''}`}>{isFavorited ? '❤️' : '🤍'}</span>
                 <span>{isFavorited ? '已收藏' : '收藏'}</span>
               </button>
             </div>
@@ -215,14 +214,16 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                       <p className="font-medium text-gray-900">{review.user_name}</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
+                          <span
                             key={star}
-                            className={`w-4 h-4 ${
+                            className={`${
                               star <= review.rating
-                                ? "text-yellow-400 fill-yellow-400"
+                                ? "text-yellow-400"
                                 : "text-gray-300"
                             }`}
-                          />
+                          >
+                            ★
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -246,9 +247,9 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
               <h3 className="text-xl font-bold text-gray-900">写评价</h3>
               <button
                 onClick={() => setShowReviewForm(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 text-2xl"
               >
-                <X className="w-6 h-6" />
+                ✕
               </button>
             </div>
             <ReviewForm

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { UtensilsCrossed, MapPin, Star } from "lucide-react";
 import { getCanteens, getCanteenRating } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 
@@ -25,7 +24,7 @@ export default async function Home() {
 
         {canteenData.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
-            <UtensilsCrossed className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <span className="text-4xl text-gray-300 block mb-4">🍽️</span>
             <p className="text-gray-500">暂无食堂数据</p>
             <p className="text-gray-400 text-sm mt-2">请在 Supabase 数据库中添加食堂信息</p>
           </div>
@@ -48,7 +47,7 @@ export default async function Home() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
-                      <UtensilsCrossed className="w-16 h-16 text-blue-300" />
+                      <span className="text-4xl text-blue-300">🍽️</span>
                     </div>
                   )}
                 </div>
@@ -61,7 +60,7 @@ export default async function Home() {
 
                   {canteen.location && (
                     <div className="flex items-center gap-1 text-gray-500 text-sm mb-2">
-                      <MapPin className="w-4 h-4" />
+                      <span>📍</span>
                       <span>{canteen.location}</span>
                     </div>
                   )}
@@ -75,7 +74,7 @@ export default async function Home() {
                   {/* 评分和操作按钮 */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                      <span className="text-yellow-400">★</span>
                       <span className="text-sm text-gray-600">
                         {canteen.rating > 0 ? canteen.rating.toFixed(1) : "暂无评分"}
                       </span>

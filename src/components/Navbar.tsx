@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { User, LogIn, LogOut, Home, UserCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export default function Navbar() {
@@ -15,12 +14,19 @@ export default function Navbar() {
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-8">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <Home className="h-6 w-6 text-blue-600" />
-              <span className="ml-2 text-xl font-semibold text-gray-900">
+              <span className="text-blue-600 mr-2">🏠</span>
+              <span className="text-xl font-semibold text-gray-900">
                 食堂评价系统
               </span>
+            </Link>
+            <Link 
+              href="/ranking" 
+              className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <span className="inline mr-1">🏆</span>
+              排行榜
             </Link>
           </div>
           <div className="flex items-center space-x-4">
@@ -30,7 +36,7 @@ export default function Navbar() {
                   href="/profile"
                   className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <UserCircle className="h-4 w-4 inline mr-1" />
+                  <span className="inline mr-1">👤</span>
                   个人中心
                 </Link>
                 <span className="text-sm text-gray-700">
@@ -40,7 +46,7 @@ export default function Navbar() {
                   onClick={handleLogout}
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <LogOut className="h-4 w-4 inline mr-1" />
+                  <span className="inline mr-1">🚪</span>
                   退出
                 </button>
               </div>
@@ -50,14 +56,14 @@ export default function Navbar() {
                   href="/login"
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <LogIn className="h-4 w-4 inline mr-1" />
+                  <span className="inline mr-1">🔑</span>
                   登录
                 </Link>
                 <Link
                   href="/register"
                   className="px-3 py-2 rounded-md text-sm font-medium text-blue-600 hover:text-blue-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <User className="h-4 w-4 inline mr-1" />
+                  <span className="inline mr-1">📝</span>
                   注册
                 </Link>
               </div>

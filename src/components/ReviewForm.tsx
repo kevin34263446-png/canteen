@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Star, Send } from "lucide-react";
 import { createReview } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 
@@ -66,15 +65,17 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
               key={star}
               type="button"
               onClick={() => setRating(star)}
-              className="p-1 focus:outline-none"
+              className="p-1 focus:outline-none text-2xl"
             >
-              <Star
-                className={`w-8 h-8 ${
+              <span
+                className={`${
                   star <= rating
-                    ? "text-yellow-400 fill-yellow-400"
+                    ? "text-yellow-400"
                     : "text-gray-300"
                 } transition-colors duration-200`}
-              />
+              >
+                ★
+              </span>
             </button>
           ))}
         </div>
@@ -136,7 +137,7 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
         ) : (
           <>
             <span>提交评价</span>
-            <Send className="w-4 h-4" />
+            <span>📤</span>
           </>
         )}
       </button>

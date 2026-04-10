@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { User, getUserById } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Save, X, Lock, Phone, Bell, Info } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -83,7 +82,7 @@ export default function SettingsPage() {
             href="/profile"
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <span>←</span>
             <span>返回个人中心</span>
           </Link>
         </div>
@@ -132,7 +131,7 @@ export default function SettingsPage() {
                     onClick={handleSave}
                     className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
                   >
-                    <Save className="w-4 h-4" />
+                    <span>💾</span>
                     <span>保存</span>
                   </button>
                   <button
@@ -145,7 +144,7 @@ export default function SettingsPage() {
                     }}
                     className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                   >
-                    <X className="w-4 h-4" />
+                    <span>✕</span>
                     <span>取消</span>
                   </button>
                 </div>
@@ -166,7 +165,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Lock className="w-4 h-4 text-gray-500" />
+                    <span>🔒</span>
                   </div>
                   <span className="text-gray-700">修改密码</span>
                 </div>
@@ -183,7 +182,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Phone className="w-4 h-4 text-gray-500" />
+                    <span>📱</span>
                   </div>
                   <span className="text-gray-700">绑定手机</span>
                 </div>
@@ -206,7 +205,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Bell className="w-4 h-4 text-gray-500" />
+                    <span>🔔</span>
                   </div>
                   <span className="text-gray-700">通知设置</span>
                 </div>
@@ -223,7 +222,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Info className="w-4 h-4 text-gray-500" />
+                    <span>ℹ️</span>
                   </div>
                   <span className="text-gray-700">关于我们</span>
                 </div>
