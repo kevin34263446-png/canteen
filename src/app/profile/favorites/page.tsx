@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Canteen, getUserFavorites, getCanteenRating } from "@/lib/supabase";
+import { Canteen, getCanteenById, getCanteenRating } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import { ArrowLeft, Star, Heart } from "lucide-react";
 import Link from "next/link";
@@ -19,21 +19,29 @@ export default function FavoritesPage() {
           const decoded = JSON.parse(atob(token));
           const userId = decoded.userId;
           
-          // 获取用户收藏的食堂
-          const favoriteCanteens = await getUserFavorites(userId);
+          // 从本地存储获取收藏列表
+          const favoritesKey = `favorites_${userId}`;
+          const favoriteIds = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
           
-          // 获取每个食堂的评分
-          const favoritesWithRating = await Promise.all(
-            favoriteCanteens.map(async (canteen) => {
-              const rating = await getCanteenRating(canteen.id);
-              return {
-                ...canteen,
-                rating
-              };
+          // 获取每个食堂的详情和评分
+          const favoritesWithDetails = await Promise.all(
+            favoriteIds.map(async (id: string) => {
+              const canteen = await getCanteenById(id);
+              if (canteen) {
+                const rating = await getCanteenRating(id);
+                return {
+                  ...canteen,
+                  rating
+                };
+              }
+              return null;
             })
           );
           
-          setFavorites(favoritesWithRating);
+          // 过滤掉 null 值
+          const validFavorites = favoritesWithDetails.filter((item): item is (Canteen & { rating: number }) => item !== null);
+          
+          setFavorites(validFavorites);
         }
       } catch (error) {
         console.error("获取收藏失败:", error);

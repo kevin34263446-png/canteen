@@ -4,55 +4,49 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall } from "@/lib/supabase";
+import { getStallById, getCanteenById, Review, getCanteenReviews, getCanteenRating, getStallDishes, Dish } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
 
-interface CanteenDetailPageProps {
+interface StallDetailPageProps {
   params: {
     id: string;
+    stallId: string;
   };
 }
 
-export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
+export default function StallDetailPage({ params }: StallDetailPageProps) {
   const { user } = useAuth();
+  const [stall, setStall] = useState<any>(null);
   const [canteen, setCanteen] = useState<any>(null);
+  const [dishes, setDishes] = useState<Dish[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [stalls, setStalls] = useState<Stall[]>([]);
   const [avgRating, setAvgRating] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
-  const [isFavorited, setIsFavorited] = useState<boolean>(false);
-  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null); // 用于跟踪正在删除的评价ID
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [canteenData, reviewsData, ratingData, stallsData] = await Promise.all([
+        const [stallData, canteenData, dishesData, reviewsData, ratingData] = await Promise.all([
+          getStallById(params.stallId),
           getCanteenById(params.id),
+          getStallDishes(params.stallId),
           getCanteenReviews(params.id),
           getCanteenRating(params.id),
-          getCanteenStalls(params.id),
         ]);
 
-        if (!canteenData) {
+        if (!stallData || !canteenData) {
           notFound();
         }
 
+        setStall(stallData);
         setCanteen(canteenData);
+        setDishes(dishesData);
         setReviews(reviewsData);
-        setStalls(stallsData);
         setAvgRating(ratingData);
-
-        // 检查是否已收藏
-        if (user?.id) {
-          const favoritesKey = `favorites_${user.id}`;
-          const favorites = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
-          const favorited = favorites.includes(params.id);
-          setIsFavorited(favorited);
-        }
       } catch (error) {
         console.error("获取数据失败:", error);
       } finally {
@@ -61,7 +55,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     };
 
     fetchData();
-  }, [params.id, user?.id]);
+  }, [params.id, params.stallId]);
 
   const handleReviewSuccess = async () => {
     // 重新加载评价数据
@@ -72,63 +66,6 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     setReviews(reviewsData);
     setAvgRating(ratingData);
     setShowReviewForm(false);
-  };
-
-  const handleFavorite = () => {
-    if (!user?.id) {
-      // 未登录，跳转到登录页面
-      window.location.href = '/login';
-      return;
-    }
-
-    // 获取当前用户的收藏列表
-    const favoritesKey = `favorites_${user.id}`;
-    let favorites = JSON.parse(localStorage.getItem(favoritesKey) || '[]');
-
-    if (isFavorited) {
-      // 取消收藏
-      favorites = favorites.filter((id: string) => id !== params.id);
-      setIsFavorited(false);
-    } else {
-      // 添加收藏
-      if (!favorites.includes(params.id)) {
-        favorites.push(params.id);
-        setIsFavorited(true);
-      }
-    }
-
-    // 保存到本地存储
-    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
-  };
-
-  // 处理删除评价
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!user) {
-      // 未登录，跳转到登录页面
-      window.location.href = '/login';
-      return;
-    }
-
-    // 显示确认提示
-    if (window.confirm('确定要删除这条评价吗？')) {
-      setDeletingReviewId(reviewId);
-      try {
-        const success = await deleteReview(reviewId, user);
-        if (success) {
-          // 删除成功，重新加载评价数据
-          const [reviewsData, ratingData] = await Promise.all([
-            getCanteenReviews(params.id),
-            getCanteenRating(params.id),
-          ]);
-          setReviews(reviewsData);
-          setAvgRating(ratingData);
-        }
-      } catch (error) {
-        console.error('删除评价失败:', error);
-      } finally {
-        setDeletingReviewId(null);
-      }
-    }
   };
 
   if (loading) {
@@ -142,7 +79,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     );
   }
 
-  if (!canteen) {
+  if (!stall || !canteen) {
     notFound();
   }
 
@@ -154,108 +91,99 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
-            href="/"
+            href={`/canteen/${params.id}`}
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <span>←</span>
-            <span>返回列表</span>
+            <span>返回食堂</span>
           </Link>
         </div>
       </header>
 
-      {/* 食堂详情 */}
+      {/* 档口详情 */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 图片区域 */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
           <div className="h-64 md:h-80 bg-gray-200 relative">
-            {canteen.image_url ? (
+            {stall.image_url ? (
               <Image
-                src={canteen.image_url}
-                alt={canteen.name}
+                src={stall.image_url}
+                alt={stall.name}
                 fill
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
-                <span className="text-6xl">🍽️</span>
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200">
+                <span className="text-6xl">🍜</span>
               </div>
             )}
           </div>
 
           {/* 信息区域 */}
           <div className="p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{canteen.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{stall.name}</h1>
+            <p className="text-gray-600 mb-4">所属食堂：{canteen.name}</p>
 
             <div className="flex flex-wrap gap-4 mb-6">
-              {canteen.location && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>📍</span>
-                  <span>{canteen.location}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-gray-600">
-                <span>⏰</span>
-                <span>营业时间: 06:30 - 22:00</span>
-              </div>
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400">★</span>
                 <span className="font-semibold">{avgRating.toFixed(1)}</span>
                 <span className="text-gray-500">({reviews.length} 条评价)</span>
               </div>
-              <button
-                onClick={handleFavorite}
-                className="flex items-center gap-2 text-gray-600 hover:text-red-500 transition-colors"
-              >
-                <span className={`${isFavorited ? 'text-red-500' : ''}`}>{isFavorited ? '❤️' : '🤍'}</span>
-                <span>{isFavorited ? '已收藏' : '收藏'}</span>
-              </button>
             </div>
 
-            {canteen.description && (
+            {stall.description && (
               <div className="prose max-w-none">
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">食堂介绍</h2>
-                <p className="text-gray-600 leading-relaxed">{canteen.description}</p>
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">档口介绍</h2>
+                <p className="text-gray-600 leading-relaxed">{stall.description}</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* 档口列表 */}
+        {/* 菜品列表 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">档口列表</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">菜品列表</h2>
           
-          {stalls.length === 0 ? (
+          {dishes.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">暂无档口</p>
+              <p className="text-gray-500">暂无菜品</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {stalls.map((stall: Stall) => (
+              {dishes.map((dish: Dish) => (
                 <Link
-                  key={stall.id}
-                  href={`/canteen/${params.id}/stall/${stall.id}`}
+                  key={dish.id}
+                  href={`/canteen/${params.id}/stall/${params.stallId}/dish/${dish.id}`}
                   className="block group"
                 >
                   <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                     <div className="h-40 bg-gray-200 relative">
-                      {stall.image_url ? (
+                      {dish.image_url ? (
                         <Image
-                          src={stall.image_url}
-                          alt={stall.name}
+                          src={dish.image_url}
+                          alt={dish.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200">
-                          <span className="text-4xl">🍜</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-100 to-red-200">
+                          <span className="text-4xl">🍲</span>
                         </div>
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-500 transition-colors">{stall.name}</h3>
-                      {stall.description && (
-                        <p className="text-gray-600 text-sm line-clamp-2">{stall.description}</p>
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-500 transition-colors">{dish.name}</h3>
+                        <span className="text-red-500 font-medium">¥{dish.price.toFixed(2)}</span>
+                      </div>
+                      {dish.description && (
+                        <p className="text-gray-600 text-sm line-clamp-2 mb-3">{dish.description}</p>
                       )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-400">★</span>
+                        <span className="text-gray-600">暂无评分</span>
+                      </div>
                     </div>
                   </div>
                 </Link>
@@ -306,20 +234,10 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                         ))}
                       </div>
                     </div>
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="ml-auto">
                       <span className="text-sm text-gray-400">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
-                      {/* 只有评价发布者才能看到删除按钮 */}
-                      {user && user.name === review.user_name && (
-                        <button
-                          onClick={() => handleDeleteReview(review.id)}
-                          disabled={deletingReviewId === review.id}
-                          className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                        >
-                          {deletingReviewId === review.id ? '删除中...' : '删除'}
-                        </button>
-                      )}
                     </div>
                   </div>
                   <p className="text-gray-600 ml-13 pl-13">{review.content}</p>

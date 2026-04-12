@@ -13,12 +13,17 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
   const { user } = useAuth();
   const [rating, setRating] = useState<number>(5);
   const [content, setContent] = useState<string>("");
-  const [isAnonymous, setIsAnonymous] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 检查用户是否登录
+    if (!user) {
+      setError("请先登录再提交评价");
+      return;
+    }
     
     if (!content) {
       setError("请填写评价内容");
@@ -33,25 +38,48 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
         canteen_id: canteenId,
         rating,
         content,
-        user_name: isAnonymous ? "匿名用户" : (user?.name || "未登录用户"),
-      });
+        user_name: user.name,
+      }, user);
 
-      if (result) {
+      if (result.error) {
+        setError(result.error);
+      } else if (result.review) {
         // 重置表单
         setRating(5);
         setContent("");
-        setIsAnonymous(false);
         onSuccess();
       } else {
         setError("提交失败，请重试");
       }
     } catch (err) {
-      setError("提交失败，请重试");
+      const errorMsg = `提交失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`;
+      setError(errorMsg);
+      console.error(errorMsg, err);
     } finally {
       setLoading(false);
     }
   };
 
+  // 未登录用户只显示登录提示
+  if (!user) {
+    return (
+      <div className="space-y-4">
+        <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h3 className="text-lg font-semibold mb-2">请登录后再评价</h3>
+          <p className="mb-4">只有登录用户才能提交评价</p>
+          <a 
+            href="/login" 
+            className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            去登录
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // 已登录用户显示完整表单
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* 评分选择 */}
@@ -87,22 +115,8 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
           用户名
         </label>
         <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 font-medium">
-          {user?.name || "未登录用户"}
+          {user.name}
         </div>
-      </div>
-
-      {/* 匿名评价选项 */}
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          id="anonymous"
-          checked={isAnonymous}
-          onChange={(e) => setIsAnonymous(e.target.checked)}
-          className="w-4 h-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
-        />
-        <label htmlFor="anonymous" className="ml-2 text-sm text-gray-800 font-medium">
-          匿名评价
-        </label>
       </div>
 
       {/* 评价内容 */}
@@ -130,7 +144,11 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+        className={`w-full py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+          loading 
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-blue-500 text-white hover:bg-blue-600"
+        }`}
       >
         {loading ? (
           <span>提交中...</span>

@@ -15,6 +15,27 @@ export type Canteen = {
   created_at: string;
 };
 
+// 档口类型定义
+export type Stall = {
+  id: string;
+  canteen_id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  created_at: string;
+};
+
+// 菜品类型定义
+export type Dish = {
+  id: string;
+  stall_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  created_at: string;
+};
+
 // 评价类型定义
 export type Review = {
   id: string;
@@ -22,7 +43,6 @@ export type Review = {
   rating: number;
   content: string;
   user_name: string;
-  is_anonymous: boolean;
   created_at: string;
 };
 
@@ -97,19 +117,33 @@ export async function createReview(data: {
   rating: number;
   content: string;
   user_name: string;
-}): Promise<Review | null> {
-  const { data: newReview, error } = await supabase
-    .from("reviews")
-    .insert(data)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("提交评价失败:", error);
-    return null;
+}, user: User | null): Promise<{ review: Review | null; error: string | null }> {
+  // 检查用户是否登录
+  if (!user) {
+    const errorMsg = "未登录用户不能提交评价";
+    console.error(errorMsg);
+    return { review: null, error: errorMsg };
   }
 
-  return newReview;
+  try {
+    const { data: newReview, error } = await supabase
+      .from("reviews")
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) {
+      const errorMsg = `提交评价失败: ${error.message || JSON.stringify(error)}`;
+      console.error(errorMsg, error);
+      return { review: null, error: errorMsg };
+    }
+
+    return { review: newReview, error: null };
+  } catch (err) {
+    const errorMsg = `提交评价失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`;
+    console.error(errorMsg, err);
+    return { review: null, error: errorMsg };
+  }
 }
 
 // 获取食堂的平均评分
@@ -125,6 +159,27 @@ export async function getCanteenRating(canteenId: string): Promise<number> {
   }
 
   return Number((data as any).avg_rating || 0);
+}
+
+// 删除评价
+export async function deleteReview(reviewId: string, user: User | null): Promise<boolean> {
+  // 检查用户是否登录
+  if (!user) {
+    console.error("未登录用户不能删除评价");
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("reviews")
+    .delete()
+    .eq("id", reviewId);
+
+  if (error) {
+    console.error("删除评价失败:", error);
+    return false;
+  }
+
+  return true;
 }
 
 // 用户注册
@@ -383,4 +438,68 @@ export async function getCanteenRanking(): Promise<(Canteen & { rating: number }
   canteensWithRating.sort((a, b) => b.rating - a.rating);
 
   return canteensWithRating;
+}
+
+// 获取食堂的档口列表
+export async function getCanteenStalls(canteenId: string): Promise<Stall[]> {
+  const { data, error } = await supabase
+    .from("stalls")
+    .select("*")
+    .eq("canteen_id", canteenId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("获取档口列表失败:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 获取单个档口详情
+export async function getStallById(stallId: string): Promise<Stall | null> {
+  const { data, error } = await supabase
+    .from("stalls")
+    .select("*")
+    .eq("id", stallId)
+    .single();
+
+  if (error) {
+    console.error("获取档口详情失败:", error);
+    return null;
+  }
+
+  return data;
+}
+
+// 获取档口的菜品列表
+export async function getStallDishes(stallId: string): Promise<Dish[]> {
+  const { data, error } = await supabase
+    .from("dishes")
+    .select("*")
+    .eq("stall_id", stallId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("获取菜品列表失败:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 获取单个菜品详情
+export async function getDishById(dishId: string): Promise<Dish | null> {
+  const { data, error } = await supabase
+    .from("dishes")
+    .select("*")
+    .eq("id", dishId)
+    .single();
+
+  if (error) {
+    console.error("获取菜品详情失败:", error);
+    return null;
+  }
+
+  return data;
 }
