@@ -15,26 +15,30 @@ export default function ReviewsPage() {
       setLoading(true);
       try {
         const token = localStorage.getItem('auth_token');
-        if (token) {
-          const decoded = JSON.parse(atob(token));
-          const userId = decoded.userId;
-          
-          // 获取用户评价历史
-          const userReviews = await getUserReviews(userId);
-
-          // 获取食堂名称
-          const reviewsWithCanteenName = await Promise.all(
-            userReviews.map(async (review) => {
-              const canteen = await getCanteenById(review.canteen_id);
-              return {
-                ...review,
-                canteenName: canteen?.name || '未知食堂'
-              };
-            })
-          );
-
-          setReviews(reviewsWithCanteenName);
+        if (!token) {
+          // 未登录用户，跳转到登录页面
+          window.location.href = "/login";
+          return;
         }
+        
+        const decoded = JSON.parse(atob(token));
+        const userId = decoded.userId;
+        
+        // 获取用户评价历史
+        const userReviews = await getUserReviews(userId);
+
+        // 获取食堂名称
+        const reviewsWithCanteenName = await Promise.all(
+          userReviews.map(async (review) => {
+            const canteen = await getCanteenById(review.canteen_id);
+            return {
+              ...review,
+              canteenName: canteen?.name || '未知食堂'
+            };
+          })
+        );
+
+        setReviews(reviewsWithCanteenName);
       } catch (error) {
         console.error("获取评价历史失败:", error);
       } finally {

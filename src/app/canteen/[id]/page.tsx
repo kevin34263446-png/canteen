@@ -189,12 +189,14 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">用户评价</h2>
-            <button
-              onClick={() => setShowReviewForm(true)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              写评价
-            </button>
+            {userId && (
+              <button
+                onClick={() => setShowReviewForm(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                写评价
+              </button>
+            )}
           </div>
 
           {reviews.length === 0 ? (
