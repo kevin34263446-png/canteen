@@ -113,18 +113,28 @@ export async function createReview(data: {
 }
 
 // 获取食堂的平均评分
-export async function getCanteenRating(canteenId: string): Promise<number> {
+export async function getCanteenRating(canteenId: string): Promise<number | null> {
   const { data, error } = await supabase
     .from("reviews")
-    .select("avg(rating) as avg_rating")
-    .eq("canteen_id", canteenId)
-    .single();
+    .select("rating")
+    .eq("canteen_id", canteenId);
 
-  if (error || !data) {
-    return 0;
+  if (error || !data || data.length === 0) {
+    return null;
   }
 
-  return Number((data as any).avg_rating || 0);
+  // 过滤有效评分（1-5分）
+  const validRatings = data
+    .map((item: any) => Number(item.rating))
+    .filter(rating => rating >= 1 && rating <= 5);
+
+  if (validRatings.length === 0) {
+    return null;
+  }
+
+  // 计算平均分
+  const average = validRatings.reduce((sum, rating) => sum + rating, 0) / validRatings.length;
+  return parseFloat(average.toFixed(1));
 }
 
 // 用户注册

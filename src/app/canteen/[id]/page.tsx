@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite } from "@/lib/supabase";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
+import StarRating from "@/components/StarRating";
 
 interface CanteenDetailPageProps {
   params: {
@@ -17,7 +18,7 @@ interface CanteenDetailPageProps {
 export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [avgRating, setAvgRating] = useState<number>(0);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
@@ -163,8 +164,9 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 <span>营业时间: 06:30 - 22:00</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-yellow-400">★</span>
-                <span className="font-semibold">{avgRating.toFixed(1)}</span>
+                {/* 星级评分显示 */}
+                <StarRating score={avgRating} size="md" />
+                <span className="font-semibold">{avgRating !== null ? avgRating : "暂无评分"}</span>
                 <span className="text-gray-500">({reviews.length} 条评价)</span>
               </div>
               <button
@@ -219,7 +221,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                             className={`${
                               star <= review.rating
                                 ? "text-yellow-400"
-                                : "text-gray-300"
+                                : "text-yellow-200"
                             }`}
                           >
                             ★

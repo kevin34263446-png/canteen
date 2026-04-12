@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCanteens, getCanteenRating } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
+import StarRating from "@/components/StarRating";
 
 export default async function Home() {
   const canteens = await getCanteens();
@@ -73,10 +74,11 @@ export default async function Home() {
 
                   {/* 评分和操作按钮 */}
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-400">★</span>
-                      <span className="text-sm text-gray-600">
-                        {canteen.rating > 0 ? canteen.rating.toFixed(1) : "暂无评分"}
+                    <div className="flex items-center gap-2">
+                      {/* 星级评分显示 */}
+                      <StarRating score={canteen.rating} size="md" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {canteen.rating !== null ? `${canteen.rating}分` : "暂无评分"}
                       </span>
                     </div>
                     <span className="text-blue-500 text-sm font-medium hover:text-blue-600">
