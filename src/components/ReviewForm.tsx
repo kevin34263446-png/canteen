@@ -20,11 +20,6 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
-      setError("请先登录后再提交评价");
-      return;
-    }
-
     if (!content) {
       setError("请填写评价内容");
       return;
@@ -58,110 +53,94 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
   };
 
   return (
-    <div className="space-y-4">
-      {!user ? (
-        <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-          <div className="text-4xl mb-4">🔒</div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">需要登录才能评价</h3>
-          <p className="text-gray-600 mb-4">请先登录您的账号，然后再提交评价。</p>
-          <button
-            onClick={() => window.location.href = "/login"}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            去登录
-          </button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* 评分选择 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-800 mb-2">
+          评分
+        </label>
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setRating(star)}
+              className="p-1 focus:outline-none text-2xl"
+            >
+              <span
+                className={`${
+                  star <= rating
+                    ? "text-yellow-400"
+                    : "text-gray-300"
+                } transition-colors duration-200`}
+              >
+                ★
+              </span>
+            </button>
+          ))}
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 评分选择 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-800 mb-2">
-              评分
-            </label>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  className="p-1 focus:outline-none text-2xl"
-                >
-                  <span
-                    className={`${
-                      star <= rating
-                        ? "text-yellow-400"
-                        : "text-gray-300"
-                    } transition-colors duration-200`}
-                  >
-                    ★
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+      </div>
 
-          {/* 用户名 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-800 mb-2">
-              用户名
-            </label>
-            <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 font-medium">
-              {user?.name || "未登录用户"}
-            </div>
-          </div>
+      {/* 用户名 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-800 mb-2">
+          用户名
+        </label>
+        <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 font-medium">
+          {user?.name || "未登录用户"}
+        </div>
+      </div>
 
-          {/* 匿名评价选项 */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="anonymous"
-              checked={isAnonymous}
-              onChange={(e) => setIsAnonymous(e.target.checked)}
-              className="w-4 h-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="anonymous" className="ml-2 text-sm text-gray-800 font-medium">
-              匿名评价
-            </label>
-          </div>
+      {/* 匿名评价选项 */}
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          id="anonymous"
+          checked={isAnonymous}
+          onChange={(e) => setIsAnonymous(e.target.checked)}
+          className="w-4 h-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <label htmlFor="anonymous" className="ml-2 text-sm text-gray-800 font-medium">
+          匿名评价
+        </label>
+      </div>
 
-          {/* 评价内容 */}
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-800 mb-2">
-              评价内容
-            </label>
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="请分享您的用餐体验..."
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-800"
-              required
-            />
-          </div>
+      {/* 评价内容 */}
+      <div>
+        <label htmlFor="content" className="block text-sm font-medium text-gray-800 mb-2">
+          评价内容
+        </label>
+        <textarea
+          id="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="请分享您的用餐体验..."
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-800"
+          required
+        />
+      </div>
 
-          {/* 错误信息 */}
-          {error && (
-            <div className="text-red-500 text-sm">{error}</div>
-          )}
-
-          {/* 提交按钮 */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <span>提交中...</span>
-            ) : (
-              <>
-                <span>提交评价</span>
-                <span>📤</span>
-              </>
-            )}
-          </button>
-        </form>
+      {/* 错误信息 */}
+      {error && (
+        <div className="text-red-500 text-sm">{error}</div>
       )}
-    </div>
+
+      {/* 提交按钮 */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+      >
+        {loading ? (
+          <span>提交中...</span>
+        ) : (
+          <>
+            <span>提交评价</span>
+            <span>📤</span>
+          </>
+        )}
+      </button>
+    </form>
   );
 }
