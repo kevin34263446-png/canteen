@@ -230,7 +230,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                       </div>
                     </div>
                     <span className="ml-auto text-sm text-gray-400">
-                      {new Date(review.created_at).toLocaleDateString()}
+                      {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <p className="text-gray-600 ml-13 pl-13">{review.content}</p>

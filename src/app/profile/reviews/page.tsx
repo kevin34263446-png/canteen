@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { Review, getCanteenById, getUserReviews } from "@/lib/supabase";
@@ -94,7 +94,7 @@ export default function ReviewsPage() {
                     {review.canteenName}
                   </Link>
                   <span className="text-sm text-gray-400">
-                    {new Date(review.created_at).toLocaleDateString()}
+                    {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 
