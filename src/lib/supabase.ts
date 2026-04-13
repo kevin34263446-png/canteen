@@ -19,10 +19,10 @@ export type Canteen = {
 export type Review = {
   id: string;
   canteen_id: string;
+  user_id: string;
   rating: number;
   content: string;
   user_name: string;
-  is_anonymous: boolean;
   created_at: string;
 };
 
@@ -94,6 +94,7 @@ export async function getCanteenReviews(canteenId: string): Promise<Review[]> {
 // 提交评价
 export async function createReview(data: {
   canteen_id: string;
+  user_id: string;
   rating: number;
   content: string;
   user_name: string;
@@ -106,7 +107,7 @@ export async function createReview(data: {
 
   if (error) {
     console.error("提交评价失败:", error);
-    return null;
+    throw new Error(`提交评价失败: ${error.message}`);
   }
 
   return newReview;

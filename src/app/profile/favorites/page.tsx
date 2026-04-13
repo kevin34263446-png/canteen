@@ -28,7 +28,7 @@ export default function FavoritesPage() {
               const rating = await getCanteenRating(canteen.id);
               return {
                 ...canteen,
-                rating
+                rating: rating !== null ? rating : 0
               };
             })
           );
