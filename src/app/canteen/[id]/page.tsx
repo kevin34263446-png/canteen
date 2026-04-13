@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite } from "@/lib/supabase";
+import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview } from "@/lib/supabase";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
@@ -23,16 +23,26 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 获取用户 ID
+        // 获取用户信息
         const token = localStorage.getItem('auth_token');
-        if (token) {
-          const decoded = JSON.parse(atob(token));
-          setUserId(decoded.userId);
+        const userJson = localStorage.getItem('auth_user');
+        if (token && userJson) {
+          try {
+            const decoded = JSON.parse(atob(token));
+            setUserId(decoded.userId);
+            setUser(JSON.parse(userJson));
+          } catch (error) {
+            // 清除无效的存储数据
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+          }
         }
 
         const [canteenData, reviewsData, ratingData] = await Promise.all([
@@ -94,6 +104,40 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
       if (success) {
         setIsFavorited(true);
       }
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!user) {
+      // 未登录，跳转到登录页面
+      window.location.href = '/login';
+      return;
+    }
+
+    // 确认删除
+    if (!confirm('确定要删除这条评价吗？')) {
+      return;
+    }
+
+    setDeletingReviewId(reviewId);
+    try {
+      const result = await deleteReview(reviewId, user);
+      if (result.success) {
+        // 重新加载评价数据
+        const [reviewsData, ratingData] = await Promise.all([
+          getCanteenReviews(params.id),
+          getCanteenRating(params.id),
+        ]);
+        setReviews(reviewsData);
+        setAvgRating(ratingData);
+      } else {
+        alert(result.error || '删除评价失败');
+      }
+    } catch (error) {
+      console.error('删除评价失败:', error);
+      alert('删除评价失败，请重试');
+    } finally {
+      setDeletingReviewId(null);
     }
   };
 
@@ -229,9 +273,21 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                         ))}
                       </div>
                     </div>
-                    <span className="ml-auto text-sm text-gray-400">
-                      {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="ml-auto flex items-center gap-2">
+                      <span className="text-sm text-gray-400">
+                        {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {/* 只有评价的发布者才能看到删除按钮 */}
+                      {user && user.name === review.user_name && (
+                        <button
+                          onClick={() => handleDeleteReview(review.id)}
+                          disabled={deletingReviewId === review.id}
+                          className="text-red-500 hover:text-red-700 text-sm transition-colors"
+                        >
+                          {deletingReviewId === review.id ? '删除中...' : '删除'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className="text-gray-600 ml-13 pl-13">{review.content}</p>
                 </div>

@@ -1,39 +1,49 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Review, getCanteenById, getUserReviews } from "@/lib/supabase";
+import { Review, getCanteenById, getUserReviews, deleteReview } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Star } from "lucide-react";
+import { ArrowLeft, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<(Review & { canteenName: string })[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<any>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReviews = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('auth_token');
-        if (token) {
-          const decoded = JSON.parse(atob(token));
-          const userId = decoded.userId;
-          
-          // 获取用户评价历史
-          const userReviews = await getUserReviews(userId);
+        const userJson = localStorage.getItem('auth_user');
+        if (token && userJson) {
+          try {
+            const decoded = JSON.parse(atob(token));
+            const userId = decoded.userId;
+            setUser(JSON.parse(userJson));
+            
+            // 获取用户评价历史
+            const userReviews = await getUserReviews(userId);
 
-          // 获取食堂名称
-          const reviewsWithCanteenName = await Promise.all(
-            userReviews.map(async (review) => {
-              const canteen = await getCanteenById(review.canteen_id);
-              return {
-                ...review,
-                canteenName: canteen?.name || '未知食堂'
-              };
-            })
-          );
+            // 获取食堂名称
+            const reviewsWithCanteenName = await Promise.all(
+              userReviews.map(async (review) => {
+                const canteen = await getCanteenById(review.canteen_id);
+                return {
+                  ...review,
+                  canteenName: canteen?.name || '未知食堂'
+                };
+              })
+            );
 
-          setReviews(reviewsWithCanteenName);
+            setReviews(reviewsWithCanteenName);
+          } catch (error) {
+            // 清除无效的存储数据
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+          }
         }
       } catch (error) {
         console.error("获取评价历史失败:", error);
@@ -44,6 +54,35 @@ export default function ReviewsPage() {
 
     fetchReviews();
   }, []);
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!user) {
+      // 未登录，跳转到登录页面
+      window.location.href = '/login';
+      return;
+    }
+
+    // 确认删除
+    if (!confirm('确定要删除这条评价吗？')) {
+      return;
+    }
+
+    setDeletingReviewId(reviewId);
+    try {
+      const result = await deleteReview(reviewId, user);
+      if (result.success) {
+        // 从列表中移除删除的评价
+        setReviews(reviews.filter(review => review.id !== reviewId));
+      } else {
+        alert(result.error || '删除评价失败');
+      }
+    } catch (error) {
+      console.error('删除评价失败:', error);
+      alert('删除评价失败，请重试');
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -93,9 +132,23 @@ export default function ReviewsPage() {
                   >
                     {review.canteenName}
                   </Link>
-                  <span className="text-sm text-gray-400">
-                    {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-400">
+                      {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteReview(review.id)}
+                      disabled={deletingReviewId === review.id}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                      title="删除评价"
+                    >
+                      {deletingReviewId === review.id ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-red-500"></div>
+                      ) : (
+                        <Trash2 className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-2 mb-3">

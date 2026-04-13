@@ -113,6 +113,56 @@ export async function createReview(data: {
   return newReview;
 }
 
+// 删除评价
+export async function deleteReview(reviewId: string, user: User | null): Promise<{ success: boolean; error: string | null }> {
+  // 检查用户是否登录
+  if (!user) {
+    const errorMsg = "未登录用户不能删除评价";
+    console.error(errorMsg);
+    return { success: false, error: errorMsg };
+  }
+
+  try {
+    // 首先获取评价信息，检查是否是用户自己的评价
+    const { data: review, error: getError } = await supabase
+      .from("reviews")
+      .select("user_name")
+      .eq("id", reviewId)
+      .single();
+
+    if (getError || !review) {
+      const errorMsg = "评价不存在";
+      console.error(errorMsg, getError);
+      return { success: false, error: errorMsg };
+    }
+
+    // 检查是否是用户自己的评价
+    if (review.user_name !== user.name) {
+      const errorMsg = "只能删除自己的评价";
+      console.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    // 删除评价
+    const { error: deleteError } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", reviewId);
+
+    if (deleteError) {
+      const errorMsg = `删除评价失败: ${deleteError.message || JSON.stringify(deleteError)}`;
+      console.error(errorMsg, deleteError);
+      return { success: false, error: errorMsg };
+    }
+
+    return { success: true, error: null };
+  } catch (err) {
+    const errorMsg = `删除评价失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`;
+    console.error(errorMsg, err);
+    return { success: false, error: errorMsg };
+  }
+}
+
 // 获取食堂的平均评分
 export async function getCanteenRating(canteenId: string): Promise<number | null> {
   const { data, error } = await supabase
