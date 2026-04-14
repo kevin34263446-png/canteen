@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview } from "@/lib/supabase";
+import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes } from "@/lib/supabase";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
@@ -25,6 +25,12 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [activeStall, setActiveStall] = useState<string | null>(null);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("全部");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,10 +51,13 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
           }
         }
 
-        const [canteenData, reviewsData, ratingData] = await Promise.all([
+        const [canteenData, reviewsData, ratingData, stallsData, dishesData, categoriesData] = await Promise.all([
           getCanteenById(params.id),
           getCanteenReviews(params.id),
           getCanteenRating(params.id),
+          getCanteenStalls(params.id),
+          getCanteenDishes(params.id),
+          getDishCategories(params.id),
         ]);
 
         if (!canteenData) {
@@ -58,6 +67,9 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         setCanteen(canteenData);
         setReviews(reviewsData);
         setAvgRating(ratingData);
+        setStalls(stallsData);
+        setDishes(dishesData);
+        setCategories(['全部', ...categoriesData]);
 
         // 检查是否已收藏
         if (userId) {
@@ -80,10 +92,40 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
       getCanteenReviews(params.id),
       getCanteenRating(params.id),
     ]);
+
     setReviews(reviewsData);
     setAvgRating(ratingData);
     setShowReviewForm(false);
   };
+
+  // 处理档口选择
+  const handleStallSelect = async (stallId: string) => {
+    setActiveStall(stallId === activeStall ? null : stallId);
+    setActiveCategory("全部");
+    
+    if (stallId === activeStall) {
+      // 取消选择档口，显示所有菜品
+      const allDishes = await getCanteenDishes(params.id);
+      setDishes(allDishes);
+    } else {
+      // 选择档口，显示该档口的菜品
+      const stallDishes = await getStallDishes(stallId);
+      setDishes(stallDishes);
+    }
+  };
+
+  // 过滤菜品
+  const filteredDishes = dishes.filter(dish => {
+    // 分类过滤
+    const categoryMatch = activeCategory === "全部" || dish.category === activeCategory;
+    
+    // 搜索过滤
+    const searchMatch = searchQuery === "" || 
+      dish.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dish.description && dish.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return categoryMatch && searchMatch;
+  });
 
   const handleFavorite = async () => {
     if (!userId) {
@@ -229,6 +271,147 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* 档口区域 */}
+        <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">档口列表</h2>
+          
+          {stalls.length === 0 ? (
+            <div className="text-center py-8">
+              <span className="text-4xl text-gray-300 block mb-2">🏪</span>
+              <p className="text-gray-500">该食堂暂无档口信息</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {stalls.map((stall) => (
+                <div 
+                  key={stall.id} 
+                  onClick={() => handleStallSelect(stall.id)}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${activeStall === stall.id 
+                    ? 'border-blue-600 bg-blue-50' 
+                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200">
+                      {stall.image_url ? (
+                        <Image
+                          src={stall.image_url}
+                          alt={stall.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-yellow-100 to-orange-100">
+                          <span className="text-2xl">🍽️</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{stall.name}</h3>
+                      {stall.description && (
+                        <p className="text-sm text-gray-600 line-clamp-1">{stall.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 菜品区域 */}
+        <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            菜品列表
+            {activeStall && (
+              <span className="text-sm font-normal text-gray-500 ml-2">
+                (来自: {stalls.find(s => s.id === activeStall)?.name})
+              </span>
+            )}
+          </h2>
+
+          {/* 搜索框 */}
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="搜索菜品名称或描述..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                🔍
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 分类筛选 */}
+          <div className="flex flex-wrap gap-3 mb-6">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeCategory === category 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          {/* 菜品列表 */}
+          {filteredDishes.length === 0 ? (
+            <div className="text-center py-12">
+              <span className="text-6xl text-gray-300 block mb-4">🍜</span>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">暂无菜品数据</h3>
+              <p className="text-gray-500">该食堂暂无菜品信息</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDishes.map((dish) => (
+                <div key={dish.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <div className="h-48 bg-gray-200 relative">
+                    {dish.image_url ? (
+                      <Image
+                        src={dish.image_url}
+                        alt={dish.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100">
+                        <span className="text-4xl text-green-400">🍽️</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{dish.name}</h3>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-blue-600 font-bold">¥{dish.price.toFixed(2)}</span>
+                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">{dish.category}</span>
+                    </div>
+                    {dish.description && (
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{dish.description}</p>
+                    )}
+                    <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                      查看详情
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 评价区域 */}

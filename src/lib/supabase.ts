@@ -26,6 +26,29 @@ export type Review = {
   created_at: string;
 };
 
+// 档口类型定义
+export type Stall = {
+  id: string;
+  canteen_id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  created_at: string;
+};
+
+// 菜品类型定义
+export type Dish = {
+  id: string;
+  canteen_id: string;
+  stall_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  category: string;
+  created_at: string;
+};
+
 // 用户类型定义
 export type User = {
   id: string;
@@ -444,4 +467,245 @@ export async function getCanteenRanking(): Promise<(Canteen & { rating: number }
   canteensWithRating.sort((a, b) => b.rating - a.rating);
 
   return canteensWithRating;
+}
+
+// 档口模拟数据
+const mockStalls: Stall[] = [
+  // 第一食堂档口
+  {
+    id: '1',
+    canteen_id: '1',
+    name: '川味炒菜',
+    description: '提供正宗川菜，口味麻辣鲜香。',
+    image_url: 'https://via.placeholder.com/300',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    canteen_id: '1',
+    name: '主食窗口',
+    description: '提供各种主食，包括米饭、面条等。',
+    image_url: 'https://via.placeholder.com/300',
+    created_at: new Date().toISOString()
+  },
+  // 第二食堂档口
+  {
+    id: '3',
+    canteen_id: '2',
+    name: '面食档',
+    description: '提供各种面食，包括拉面、小面等。',
+    image_url: 'https://via.placeholder.com/300',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '4',
+    canteen_id: '2',
+    name: '小吃档',
+    description: '提供各种传统小吃，包括煎饼果子、手抓饼等。',
+    image_url: 'https://via.placeholder.com/300',
+    created_at: new Date().toISOString()
+  },
+  // 第三食堂档口
+  {
+    id: '5',
+    canteen_id: '3',
+    name: '套餐档',
+    description: '提供各种营养套餐，搭配合理。',
+    image_url: 'https://via.placeholder.com/300',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '6',
+    canteen_id: '3',
+    name: '健康食品',
+    description: '提供健康沙拉、水果等。',
+    image_url: 'https://via.placeholder.com/300',
+    created_at: new Date().toISOString()
+  }
+];
+
+// 菜品模拟数据
+const mockDishes: Dish[] = [
+  // 第一食堂 - 川味炒菜档口
+  {
+    id: '1',
+    canteen_id: '1',
+    stall_id: '1',
+    name: '宫保鸡丁',
+    description: '经典川菜，鸡肉嫩滑，花生香脆，辣中带甜。',
+    price: 12.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '炒菜',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    canteen_id: '1',
+    stall_id: '1',
+    name: '鱼香肉丝',
+    description: '传统川菜，肉丝鲜嫩，木耳爽脆，酸甜可口。',
+    price: 10.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '炒菜',
+    created_at: new Date().toISOString()
+  },
+  // 第一食堂 - 主食窗口
+  {
+    id: '3',
+    canteen_id: '1',
+    stall_id: '2',
+    name: '蛋炒饭',
+    description: '经典主食，米饭粒粒分明，鸡蛋香嫩。',
+    price: 8.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '主食',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '10',
+    canteen_id: '1',
+    stall_id: '2',
+    name: '扬州炒饭',
+    description: '传统名吃，配料丰富，口感多样。',
+    price: 10.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '主食',
+    created_at: new Date().toISOString()
+  },
+  // 第二食堂 - 面食档
+  {
+    id: '4',
+    canteen_id: '2',
+    stall_id: '3',
+    name: '兰州拉面',
+    description: '手工拉面，汤头浓郁，牛肉香烂。',
+    price: 15.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '面食',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '5',
+    canteen_id: '2',
+    stall_id: '3',
+    name: '重庆小面',
+    description: '麻辣鲜香，面条劲道，配菜丰富。',
+    price: 12.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '面食',
+    created_at: new Date().toISOString()
+  },
+  // 第二食堂 - 小吃档
+  {
+    id: '6',
+    canteen_id: '2',
+    stall_id: '4',
+    name: '煎饼果子',
+    description: '传统小吃，薄饼酥脆，配料丰富。',
+    price: 6.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '小吃',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '11',
+    canteen_id: '2',
+    stall_id: '4',
+    name: '手抓饼',
+    description: '酥脆可口，可加各种配料。',
+    price: 5.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '小吃',
+    created_at: new Date().toISOString()
+  },
+  // 第三食堂 - 套餐档
+  {
+    id: '7',
+    canteen_id: '3',
+    stall_id: '5',
+    name: '套餐A',
+    description: '一荤一素一汤，营养均衡。',
+    price: 15.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '套餐',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '8',
+    canteen_id: '3',
+    stall_id: '5',
+    name: '套餐B',
+    description: '两荤一素一汤，量大实惠。',
+    price: 18.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '套餐',
+    created_at: new Date().toISOString()
+  },
+  // 第三食堂 - 健康食品
+  {
+    id: '9',
+    canteen_id: '3',
+    stall_id: '6',
+    name: '水果沙拉',
+    description: '新鲜水果，健康营养。',
+    price: 10.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '沙拉',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: '12',
+    canteen_id: '3',
+    stall_id: '6',
+    name: '蔬菜沙拉',
+    description: '新鲜蔬菜，低脂健康。',
+    price: 8.00,
+    image_url: 'https://via.placeholder.com/200',
+    category: '沙拉',
+    created_at: new Date().toISOString()
+  }
+];
+
+// 获取食堂的档口列表
+export async function getCanteenStalls(canteenId: string): Promise<Stall[]> {
+  // 模拟数据
+  return mockStalls.filter(stall => stall.canteen_id === canteenId);
+}
+
+// 获取单个档口详情
+export async function getStallById(id: string): Promise<Stall | null> {
+  // 模拟数据
+  return mockStalls.find(stall => stall.id === id) || null;
+}
+
+// 获取档口的菜品列表
+export async function getStallDishes(stallId: string): Promise<Dish[]> {
+  // 模拟数据
+  return mockDishes.filter(dish => dish.stall_id === stallId);
+}
+
+// 获取食堂的菜品列表
+export async function getCanteenDishes(canteenId: string): Promise<Dish[]> {
+  // 模拟数据
+  return mockDishes.filter(dish => dish.canteen_id === canteenId);
+}
+
+// 获取单个菜品详情
+export async function getDishById(id: string): Promise<Dish | null> {
+  // 模拟数据
+  return mockDishes.find(dish => dish.id === id) || null;
+}
+
+// 获取菜品分类列表
+export async function getDishCategories(canteenId: string): Promise<string[]> {
+  // 模拟数据
+  const canteenDishes = mockDishes.filter(dish => dish.canteen_id === canteenId);
+  const categories = [...new Set(canteenDishes.map(dish => dish.category))];
+  return categories;
+}
+
+// 按分类获取菜品
+export async function getDishesByCategory(canteenId: string, category: string): Promise<Dish[]> {
+  // 模拟数据
+  return mockDishes.filter(dish => dish.canteen_id === canteenId && dish.category === category);
 }
