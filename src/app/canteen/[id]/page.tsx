@@ -437,10 +437,10 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 <div key={review.id} className="border-b border-gray-100 pb-4">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500">{review.user_name.charAt(0)}</span>
+                      <span className="text-gray-500">{review.is_anonymous ? '匿' : review.user_name.charAt(0)}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{review.user_name}</p>
+                      <p className="font-medium text-gray-900">{review.is_anonymous ? '匿名用户' : review.user_name}</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
@@ -461,7 +461,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                         {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </span>
                       {/* 只有评价的发布者才能看到删除按钮 */}
-                      {user && user.name === review.user_name && (
+                      {user && user.id === review.user_id && (
                         <button
                           onClick={() => handleDeleteReview(review.id)}
                           disabled={deletingReviewId === review.id}

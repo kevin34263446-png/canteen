@@ -23,6 +23,7 @@ export type Review = {
   rating: number;
   content: string;
   user_name: string;
+  is_anonymous: boolean;
   created_at: string;
 };
 
@@ -121,6 +122,7 @@ export async function createReview(data: {
   rating: number;
   content: string;
   user_name: string;
+  is_anonymous: boolean;
 }): Promise<Review | null> {
   const { data: newReview, error } = await supabase
     .from("reviews")

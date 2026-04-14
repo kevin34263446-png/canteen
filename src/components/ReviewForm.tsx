@@ -13,6 +13,7 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
   const { user } = useAuth();
   const [rating, setRating] = useState<number>(5);
   const [content, setContent] = useState<string>("");
+  const [isAnonymous, setIsAnonymous] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -20,6 +21,7 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+
     if (!content) {
       setError("请填写评价内容");
       return;
@@ -40,12 +42,14 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
         rating,
         content,
         user_name: user?.name || "未登录用户",
+        is_anonymous: isAnonymous,
       });
 
       if (result) {
         // 重置表单
         setRating(5);
         setContent("");
+        setIsAnonymous(false);
         onSuccess();
       } else {
         setError("提交失败，请重试");
@@ -109,6 +113,22 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
           ))}
         </div>
       </div>
+
+      {/* 匿名评价选项 */}
+      {user && (
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="anonymous"
+            checked={isAnonymous}
+            onChange={(e) => setIsAnonymous(e.target.checked)}
+            className="w-4 h-4 text-blue-500 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="anonymous" className="ml-2 text-sm text-gray-800 font-medium">
+            匿名发布
+          </label>
+        </div>
+      )}
 
       {/* 评价内容 */}
       <div>

@@ -9,19 +9,24 @@ const RankingPage = () => {
   const [ranking, setRanking] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchRanking = async () => {
-      try {
-        const data = await getCanteenRanking();
-        setRanking(data);
-      } catch (error) {
-        console.error('获取排行榜失败:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchRanking = async () => {
+    try {
+      const data = await getCanteenRanking();
+      setRanking(data);
+    } catch (error) {
+      console.error('获取排行榜失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRanking();
+    
+    // 每30秒刷新一次排行榜数据
+    const interval = setInterval(fetchRanking, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (

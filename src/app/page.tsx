@@ -1,19 +1,44 @@
+'use client';
+
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { getCanteens, getCanteenRating } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
 
-export default async function Home() {
-  const canteens = await getCanteens();
-  
-  // 并行获取所有食堂的评分
-  const canteenData = await Promise.all(
-    canteens.map(async (canteen) => {
-      const rating = await getCanteenRating(canteen.id);
-      return { ...canteen, rating };
-    })
-  );
+export default function Home() {
+  const [canteenData, setCanteenData] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const fetchCanteenData = async () => {
+    try {
+      const canteens = await getCanteens();
+      
+      // 并行获取所有食堂的评分
+      const data = await Promise.all(
+        canteens.map(async (canteen) => {
+          const rating = await getCanteenRating(canteen.id);
+          return { ...canteen, rating };
+        })
+      );
+      
+      setCanteenData(data);
+    } catch (error) {
+      console.error('获取食堂数据失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCanteenData();
+    
+    // 每30秒刷新一次评分数据
+    const interval = setInterval(fetchCanteenData, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -23,7 +48,12 @@ export default async function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">食堂列表</h2>
 
-        {canteenData.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">加载中...</p>
+          </div>
+        ) : canteenData.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <span className="text-4xl text-gray-300 block mb-4">🍽️</span>
             <p className="text-gray-500">暂无食堂数据</p>
