@@ -77,10 +77,13 @@ export default function ProfilePage() {
                 {user.user_type === 'student' ? '学号' : '工号'}: {user.student_id}
               </p>
               <div className="mt-4">
-                <button className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors">
+                <a 
+                  href="/profile/settings" 
+                  className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors"
+                >
                   <span>✏️</span>
                   <span>编辑资料</span>
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -148,9 +151,11 @@ export default function ProfilePage() {
           <button 
             className="flex items-center justify-between w-full p-6 text-left hover:bg-gray-50 transition-colors"
             onClick={() => {
-              localStorage.removeItem('auth_token');
-              localStorage.removeItem('user');
-              window.location.href = '/login';
+              if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+              }
             }}
           >
             <div className="flex items-center gap-4">

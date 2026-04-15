@@ -7,7 +7,9 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    logout();
+    if (confirm('确定要退出登录吗？')) {
+      logout();
+    }
   };
 
   return (

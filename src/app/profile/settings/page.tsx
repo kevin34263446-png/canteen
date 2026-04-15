@@ -11,6 +11,10 @@ export default function SettingsPage() {
   const [editing, setEditing] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [userType, setUserType] = useState<string>('student');
+  const [studentId, setStudentId] = useState<string>('');
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [saving, setSaving] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -24,6 +28,8 @@ export default function SettingsPage() {
           if (userData) {
             setName(userData.name);
             setEmail(userData.email);
+            setUserType(userData.user_type);
+            setStudentId(userData.student_id);
           }
         }
       } catch (error) {
@@ -36,10 +42,64 @@ export default function SettingsPage() {
     fetchUser();
   }, []);
 
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    // 验证用户名
+    if (!name.trim()) {
+      newErrors.name = '请输入用户名';
+    } else if (name.length < 3 || name.length > 20) {
+      newErrors.name = '用户名长度应在3-20个字符之间';
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      newErrors.name = '用户名只能包含字母、数字、下划线和连字符';
+    }
+    
+    // 验证邮箱
+    if (!email.trim()) {
+      newErrors.email = '请输入邮箱';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = '请输入有效的邮箱地址';
+    }
+    
+    // 验证身份标识
+    if (!studentId.trim()) {
+      newErrors.studentId = userType === 'student' ? '请输入学号' : '请输入工号';
+    } else if (userType === 'student' && studentId.length !== 10) {
+      newErrors.studentId = '学号必须为10位';
+    } else if (userType === 'staff' && studentId.length !== 8) {
+      newErrors.studentId = '工号必须为8位';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = async () => {
-    // 实际项目中应该调用 API 更新用户信息
-    alert('保存成功！');
-    setEditing(false);
+    if (!validateForm()) {
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      // 实际项目中应该调用 API 更新用户信息
+      console.log('保存用户资料:', {
+        name,
+        email,
+        user_type: userType,
+        student_id: studentId
+      });
+      
+      // 模拟API调用延迟
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      alert('保存成功！');
+      setEditing(false);
+    } catch (error) {
+      console.error('保存失败:', error);
+      alert('保存失败，请重试');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -99,12 +159,19 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
               {editing ? (
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 ${
+                      errors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-gray-900">{user.name}</p>
               )}
@@ -113,14 +180,82 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
               {editing ? (
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 ${
+                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  )}
+                </>
               ) : (
                 <p className="text-gray-900">{user.email}</p>
+              )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">身份</label>
+              {editing ? (
+                <div className="flex space-x-4">
+                  <div className="flex items-center">
+                    <input
+                      id="student"
+                      name="userType"
+                      type="radio"
+                      value="student"
+                      checked={userType === "student"}
+                      onChange={() => setUserType("student")}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <label htmlFor="student" className="ml-2 block text-sm text-gray-900">
+                      学生
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      id="staff"
+                      name="userType"
+                      type="radio"
+                      value="staff"
+                      checked={userType === "staff"}
+                      onChange={() => setUserType("staff")}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                    />
+                    <label htmlFor="staff" className="ml-2 block text-sm text-gray-900">
+                      教职工
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-900">{user.user_type === 'student' ? '学生' : '教职工'}</p>
+              )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {userType === 'student' ? '学号' : '工号'}
+              </label>
+              {editing ? (
+                <>
+                  <input
+                    type="text"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 ${
+                      errors.studentId ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.studentId && (
+                    <p className="mt-1 text-sm text-red-600">{errors.studentId}</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-900">{user.student_id}</p>
               )}
             </div>
             
@@ -129,17 +264,30 @@ export default function SettingsPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    disabled={saving}
+                    className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>💾</span>
-                    <span>保存</span>
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                        <span>保存中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>💾</span>
+                        <span>保存</span>
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => {
                       setEditing(false);
+                      setErrors({});
                       if (user) {
                         setName(user.name);
                         setEmail(user.email);
+                        setUserType(user.user_type);
+                        setStudentId(user.student_id);
                       }
                     }}
                     className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"

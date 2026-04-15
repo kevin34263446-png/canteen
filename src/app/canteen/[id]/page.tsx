@@ -339,7 +339,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 placeholder="搜索菜品名称或描述..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900"
               />
               <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
                 🔍
