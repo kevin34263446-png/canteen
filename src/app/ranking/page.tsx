@@ -12,7 +12,23 @@ const RankingPage = () => {
   const fetchRanking = async () => {
     try {
       const data = await getCanteenRanking();
-      setRanking(data);
+      
+      // 实现竞争排名（1224排名）逻辑
+      const rankedData = data.map((canteen, index) => {
+        // 找到当前分数的第一个出现位置
+        let rank = 1;
+        for (let i = 0; i < index; i++) {
+          if (data[i].rating > canteen.rating) {
+            rank++;
+          }
+        }
+        return {
+          ...canteen,
+          rank
+        };
+      });
+      
+      setRanking(rankedData);
     } catch (error) {
       console.error('获取排行榜失败:', error);
     } finally {
@@ -31,6 +47,17 @@ const RankingPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      {/* 返回按钮 */}
+      <div className="mb-6">
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <span>←</span>
+          <span>返回上一页</span>
+        </button>
+      </div>
+      
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           食堂排行榜
@@ -55,7 +82,7 @@ const RankingPage = () => {
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
               <div className="absolute top-3 left-3 bg-yellow-400 text-white font-bold px-3 py-1 rounded-full flex items-center space-x-1">
-                <span>#{index + 1}</span>
+                <span>#{canteen.rank}</span>
               </div>
             </div>
             
