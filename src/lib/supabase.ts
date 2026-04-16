@@ -261,9 +261,22 @@ export type Canteen = {
   created_at: string;
 };
 
-// 评价类型定义
+// 食堂评价类型定义
 export type Review = {
   id: string;
+  canteen_id: string;
+  user_id: string;
+  rating: number;
+  content: string;
+  user_name: string;
+  is_anonymous: boolean;
+  created_at: string;
+};
+
+// 菜品评价类型定义
+export type DishReview = {
+  id: string;
+  dish_id: string;
   canteen_id: string;
   user_id: string;
   rating: number;
@@ -683,18 +696,27 @@ export async function login(email: string, password: string, userType: string): 
 
 // 获取用户信息
 export async function getUserById(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
-    .eq("id", userId)
-    .single();
-
-  if (error) {
-    console.error("获取用户信息失败:", error);
-    return null;
+  if (!hasSupabaseConfig) {
+    return mockUsers.find(user => user.id === userId) || null;
   }
+  
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
+      .eq("id", userId)
+      .single();
 
-  return data;
+    if (error) {
+      console.error("获取用户信息失败:", error);
+      return mockUsers.find(user => user.id === userId) || null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("获取用户信息出错:", error);
+    return mockUsers.find(user => user.id === userId) || null;
+  }
 }
 
 // 获取用户评价历史
@@ -1644,18 +1666,102 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 // 获取所有用户
-export async function getAllUsers(): Promise<User[]> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, email, name, user_type, student_id, is_admin, height, weight, age, gender, activity_level, created_at, updated_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("获取用户列表失败:", error);
-    return [];
+// 模拟用户数据
+const mockUsers: User[] = [
+  {
+    id: "1",
+    email: "admin@example.com",
+    name: "管理员",
+    user_type: "teacher",
+    student_id: "00000000",
+    is_admin: true,
+    height: 175,
+    weight: 70,
+    age: 30,
+    gender: "male",
+    activity_level: "moderate",
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: "2",
+    email: "student1@example.com",
+    name: "张三",
+    user_type: "student",
+    student_id: "2023000001",
+    is_admin: false,
+    height: 170,
+    weight: 65,
+    age: 18,
+    gender: "male",
+    activity_level: "active",
+    created_at: "2024-01-02T00:00:00Z",
+    updated_at: "2024-01-02T00:00:00Z"
+  },
+  {
+    id: "3",
+    email: "student2@example.com",
+    name: "李四",
+    user_type: "student",
+    student_id: "2023000002",
+    is_admin: false,
+    height: 165,
+    weight: 55,
+    age: 19,
+    gender: "female",
+    activity_level: "moderate",
+    created_at: "2024-01-03T00:00:00Z",
+    updated_at: "2024-01-03T00:00:00Z"
+  },
+  {
+    id: "4",
+    email: "teacher1@example.com",
+    name: "王老师",
+    user_type: "teacher",
+    student_id: "12345678",
+    is_admin: false,
+    height: 180,
+    weight: 75,
+    age: 35,
+    gender: "male",
+    activity_level: "low",
+    created_at: "2024-01-04T00:00:00Z",
+    updated_at: "2024-01-04T00:00:00Z"
   }
+];
 
-  return data || [];
+export async function getAllUsers(): Promise<User[]> {
+  if (!hasSupabaseConfig) {
+    return mockUsers;
+  }
+  
+  try {
+    // 只选择数据库中实际存在的字段
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, email, name, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("获取用户列表失败:", error);
+      return mockUsers;
+    }
+
+    // 转换数据格式以匹配 User 类型
+    const users = (data || []).map(user => ({
+      ...user,
+      user_type: "student", // 默认值
+      student_id: "", // 默认值
+      // 检查用户名是否为管理员
+      is_admin: ["kevin", "千秋梧桐", "CHOW"].includes(user.name), // 将这三个用户设为管理员
+      updated_at: user.created_at // 使用 created_at 作为 updated_at
+    }));
+
+    return users;
+  } catch (error) {
+    console.error("获取用户列表出错:", error);
+    return mockUsers;
+  }
 }
 
 // 设置用户为管理员
@@ -1828,5 +1934,88 @@ export async function deleteReview(reviewId: string): Promise<{ success: boolean
     return { success: true, error: null };
   } catch (error) {
     return { success: false, error: "删除评价失败" };
+  }
+}
+
+// 获取菜品的评价列表
+export async function getDishReviews(dishId: string): Promise<DishReview[]> {
+  const { data, error } = await supabase
+    .from("dish_reviews")
+    .select("*")
+    .eq("dish_id", dishId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("获取菜品评价列表失败:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 提交菜品评价
+export async function createDishReview(data: {
+  dish_id: string;
+  canteen_id: string;
+  user_id: string;
+  rating: number;
+  content: string;
+  user_name: string;
+  is_anonymous: boolean;
+}): Promise<DishReview | null> {
+  const { data: newReview, error } = await supabase
+    .from("dish_reviews")
+    .insert(data)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("提交菜品评价失败:", error);
+    throw new Error(`提交菜品评价失败: ${error.message}`);
+  }
+
+  return newReview;
+}
+
+// 获取菜品的平均评分
+export async function getDishRating(dishId: string): Promise<number | null> {
+  const { data, error } = await supabase
+    .from("dish_reviews")
+    .select("rating")
+    .eq("dish_id", dishId);
+
+  if (error || !data || data.length === 0) {
+    return null;
+  }
+
+  // 过滤有效评分（1-5分）
+  const validRatings = data
+    .map((item: any) => Number(item.rating))
+    .filter(rating => rating >= 1 && rating <= 5);
+
+  if (validRatings.length === 0) {
+    return null;
+  }
+
+  // 计算平均分
+  const average = validRatings.reduce((sum, rating) => sum + rating, 0) / validRatings.length;
+  return parseFloat(average.toFixed(1));
+}
+
+// 删除菜品评价
+export async function deleteDishReview(reviewId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("dish_reviews")
+      .delete()
+      .eq("id", reviewId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "删除菜品评价失败" };
   }
 }

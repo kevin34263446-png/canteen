@@ -25,6 +25,13 @@ export default function Navbar() {
               </span>
             </Link>
             <Link 
+              href="/discover" 
+              className="flex items-center px-3 py-2 rounded-full text-sm font-medium text-purple-300 hover:text-purple-200 hover:bg-purple-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400 transition-all"
+            >
+              <span className="inline mr-1">✨</span>
+              发现
+            </Link>
+            <Link 
               href="/ranking" 
               className="flex items-center px-3 py-2 rounded-full text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 transition-all"
             >

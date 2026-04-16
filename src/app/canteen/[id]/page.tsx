@@ -467,7 +467,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredDishes.map((dish) => (
-                <div key={dish.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                <Link key={dish.id} href={`/dish/${dish.id}`} className="bg-gray-50 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer block">
                   <div className="h-48 bg-gray-200 relative">
                     {dish.image_url ? (
                       <Image
@@ -495,7 +495,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                       查看详情
                     </button>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
