@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { User, login as loginApi, register as registerApi } from "./supabase";
+import { User, login as loginApi, register as registerApi, getUserById } from "./supabase";
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string, userType: string) => Promise<{ error: string | null }>;
   register: (email: string, password: string, name: string, userType: string, studentId: string) => Promise<{ error: string | null }>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +79,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
   };
 
+  const refreshUser = async () => {
+    const storedToken = localStorage.getItem("auth_token");
+    if (storedToken) {
+      try {
+        const decoded = JSON.parse(atob(storedToken));
+        const userData = await getUserById(decoded.userId);
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem("auth_user", JSON.stringify(userData));
+        }
+      } catch (error) {
+        console.error("刷新用户信息失败:", error);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -87,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        refreshUser,
       }}
     >
       {children}

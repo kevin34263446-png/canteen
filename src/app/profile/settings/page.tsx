@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { User, getUserById } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { Lock } from "lucide-react";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -15,6 +16,13 @@ export default function SettingsPage() {
   const [studentId, setStudentId] = useState<string>('');
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [saving, setSaving] = useState<boolean>(false);
+  const [showChangePassword, setShowChangePassword] = useState<boolean>(false);
+  const [oldPassword, setOldPassword] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
+  const [changingPassword, setChangingPassword] = useState<boolean>(false);
+  const [passwordError, setPasswordError] = useState<string>('');
+  const [passwordSuccess, setPasswordSuccess] = useState<string>('');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -99,6 +107,64 @@ export default function SettingsPage() {
       alert('保存失败，请重试');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      setPasswordError('请填写完整信息');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('两次输入的新密码不一致');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('新密码长度不能少于6位');
+      return;
+    }
+
+    setChangingPassword(true);
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setPasswordError('请先登录');
+        return;
+      }
+      const decoded = JSON.parse(atob(token));
+
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: decoded.userId,
+          oldPassword,
+          newPassword,
+        }),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        setPasswordError(data.message);
+      } else {
+        setPasswordSuccess('密码修改成功');
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setTimeout(() => {
+          setShowChangePassword(false);
+          setPasswordSuccess('');
+        }, 2000);
+      }
+    } catch (err) {
+      setPasswordError('密码修改失败，请重试');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -310,22 +376,80 @@ export default function SettingsPage() {
           <div className="mt-8 pt-8 border-t border-gray-100">
             <h3 className="text-lg font-medium text-gray-900 mb-4">账号安全</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <span>🔒</span>
+              <div className="hover:bg-gray-50 p-3 rounded-lg transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Lock className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <span className="text-gray-700">修改密码</span>
                   </div>
-                  <span className="text-gray-700">修改密码</span>
+                  <button 
+                    className="text-blue-500 hover:text-blue-600 transition-colors"
+                    onClick={() => setShowChangePassword(!showChangePassword)}
+                  >
+                    {showChangePassword ? '收起' : '点击修改'}
+                  </button>
                 </div>
-                <button 
-                  className="text-blue-500 hover:text-blue-600 transition-colors"
-                  onClick={() => {
-                    // 实际项目中应该跳转到修改密码页面
-                    alert('修改密码功能开发中');
-                  }}
-                >
-                  点击修改
-                </button>
+
+                {showChangePassword && (
+                  <div className="mt-4 space-y-4">
+                    {passwordError && (
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                        <p className="text-red-600 text-sm">{passwordError}</p>
+                      </div>
+                    )}
+                    {passwordSuccess && (
+                      <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                        <p className="text-green-600 text-sm">{passwordSuccess}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">原密码</label>
+                      <input
+                        type="password"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                        placeholder="请输入原密码"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                        placeholder="请输入新密码（至少6位）"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">确认新密码</label>
+                      <input
+                        type="password"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                        placeholder="请再次输入新密码"
+                      />
+                    </div>
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {changingPassword ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                          <span>修改中...</span>
+                        </>
+                      ) : (
+                        <span>确认修改</span>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
@@ -337,7 +461,6 @@ export default function SettingsPage() {
                 <button 
                   className="text-blue-500 hover:text-blue-600 transition-colors"
                   onClick={() => {
-                    // 实际项目中应该跳转到绑定手机页面
                     alert('绑定手机功能开发中');
                   }}
                 >

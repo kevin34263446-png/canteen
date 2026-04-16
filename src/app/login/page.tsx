@@ -158,12 +158,12 @@ export default function LoginPage() {
             </div>
 
             <div className="text-sm">
-              <a
-                href="#"
+              <Link
+                href="/forgot-password"
                 className="font-medium text-blue-600 hover:text-blue-500"
               >
                 忘记密码？
-              </a>
+              </Link>
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import bcrypt from "bcryptjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -330,6 +331,7 @@ export type User = {
   name: string;
   user_type: string;
   student_id: string;
+  is_admin?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -480,56 +482,6 @@ export async function createDish(data: {
   return (created as Dish) || null;
 }
 
-// 删除评价
-export async function deleteReview(reviewId: string, user: User | null): Promise<{ success: boolean; error: string | null }> {
-  // 检查用户是否登录
-  if (!user) {
-    const errorMsg = "未登录用户不能删除评价";
-    console.error(errorMsg);
-    return { success: false, error: errorMsg };
-  }
-
-  try {
-    // 首先获取评价信息，检查是否是用户自己的评价
-    const { data: review, error: getError } = await supabase
-      .from("reviews")
-      .select("user_name")
-      .eq("id", reviewId)
-      .single();
-
-    if (getError || !review) {
-      const errorMsg = "评价不存在";
-      console.error(errorMsg, getError);
-      return { success: false, error: errorMsg };
-    }
-
-    // 检查是否是用户自己的评价
-    if (review.user_name !== user.name) {
-      const errorMsg = "只能删除自己的评价";
-      console.error(errorMsg);
-      return { success: false, error: errorMsg };
-    }
-
-    // 删除评价
-    const { error: deleteError } = await supabase
-      .from("reviews")
-      .delete()
-      .eq("id", reviewId);
-
-    if (deleteError) {
-      const errorMsg = `删除评价失败: ${deleteError.message || JSON.stringify(deleteError)}`;
-      console.error(errorMsg, deleteError);
-      return { success: false, error: errorMsg };
-    }
-
-    return { success: true, error: null };
-  } catch (err) {
-    const errorMsg = `删除评价失败: ${err instanceof Error ? err.message : JSON.stringify(err)}`;
-    console.error(errorMsg, err);
-    return { success: false, error: errorMsg };
-  }
-}
-
 // 获取食堂的平均评分
 export async function getCanteenRating(canteenId: string): Promise<number | null> {
   const { data, error } = await supabase
@@ -594,17 +546,19 @@ export async function register(
       };
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // 创建新用户
     const { data: newUser, error } = await supabase
       .from("users")
       .insert({
         email,
-        password, // 注意：实际项目中应该哈希密码
+        password: hashedPassword,
         name,
         user_type: userType,
         student_id: studentId,
       })
-      .select("id, email, name, user_type, student_id, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
       .single();
 
     if (error) {
@@ -637,9 +591,8 @@ export async function login(email: string, password: string, userType: string): 
   try {
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, email, name, user_type, student_id, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, password, is_admin, created_at, updated_at")
       .eq("email", email)
-      .eq("password", password) // 注意：实际项目中应该验证哈希密码
       .eq("user_type", userType)
       .single();
 
@@ -651,11 +604,35 @@ export async function login(email: string, password: string, userType: string): 
       };
     }
 
+    // 兼容旧密码：先尝试 bcrypt 验证，失败则直接比较明文（临时方案）
+    let passwordMatch = false;
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+      passwordMatch = await bcrypt.compare(password, user.password);
+    } else {
+      passwordMatch = password === user.password;
+      // 如果是明文密码，登录成功后自动更新为加密密码
+      if (passwordMatch) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await supabase
+          .from("users")
+          .update({ password: hashedPassword })
+          .eq("id", user.id);
+      }
+    }
+
+    if (!passwordMatch) {
+      return {
+        user: null,
+        token: null,
+        error: "邮箱或密码错误",
+      };
+    }
+
     // 生成简单的 token
     const token = btoa(JSON.stringify({ userId: user.id }));
 
     return {
-      user,
+      user: { ...user, password: undefined },
       token,
       error: null,
     };
@@ -672,7 +649,7 @@ export async function login(email: string, password: string, userType: string): 
 export async function getUserById(userId: string): Promise<User | null> {
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, name, user_type, student_id, created_at, updated_at")
+    .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
     .eq("id", userId)
     .single();
 
@@ -1492,5 +1469,262 @@ export async function getDishesByCategory(canteenId: string, category: string): 
   } catch (err) {
     console.error("按分类获取菜品出错:", err);
     return mockDishes.filter((dish) => dish.canteen_id === canteenId && dish.category === category);
+  }
+}
+
+// 修改密码
+export async function changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { data: user, error: fetchError } = await supabase
+      .from("users")
+      .select("password")
+      .eq("id", userId)
+      .single();
+
+    if (fetchError || !user) {
+      return { success: false, error: "用户不存在" };
+    }
+
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!passwordMatch) {
+      return { success: false, error: "原密码错误" };
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ password: hashedPassword })
+      .eq("id", userId);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "修改密码失败" };
+  }
+}
+
+// 重置密码
+export async function resetPassword(email: string, newPassword: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ password: hashedPassword })
+      .eq("email", email);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "重置密码失败" };
+  }
+}
+
+// 根据邮箱获取用户
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
+    .eq("email", email)
+    .single();
+
+  if (error) {
+    return null;
+  }
+
+  return data;
+}
+
+// 获取所有用户
+export async function getAllUsers(): Promise<User[]> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("获取用户列表失败:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 设置用户为管理员
+export async function setAdmin(userId: string, isAdmin: boolean): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("users")
+      .update({ is_admin: isAdmin })
+      .eq("id", userId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "设置失败" };
+  }
+}
+
+// 管理员重置用户密码
+export async function adminResetPassword(userId: string, newPassword: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error } = await supabase
+      .from("users")
+      .update({ password: hashedPassword })
+      .eq("id", userId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "重置密码失败" };
+  }
+}
+
+// 删除用户
+export async function deleteUser(userId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", userId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "删除用户失败" };
+  }
+}
+
+// 获取所有菜品（管理员）
+export async function getAllDishes(): Promise<Dish[]> {
+  if (!hasSupabaseConfig) {
+    return mockDishes;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("dishes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("获取所有菜品失败:", error);
+      return mockDishes;
+    }
+
+    return (data as Dish[]) || [];
+  } catch (err) {
+    console.error("获取所有菜品出错:", err);
+    return mockDishes;
+  }
+}
+
+// 添加菜品
+export async function addDish(dish: Omit<Dish, "id" | "created_at">): Promise<{ success: boolean; error: string | null; dish?: Dish }> {
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("dishes")
+      .insert({
+        ...dish,
+        created_at: now
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null, dish: data as Dish };
+  } catch (error) {
+    return { success: false, error: "添加菜品失败" };
+  }
+}
+
+// 更新菜品
+export async function updateDish(dishId: string, updates: Partial<Omit<Dish, "id" | "created_at">>): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("dishes")
+      .update(updates)
+      .eq("id", dishId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "更新菜品失败" };
+  }
+}
+
+// 删除菜品
+export async function deleteDish(dishId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("dishes")
+      .delete()
+      .eq("id", dishId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "删除菜品失败" };
+  }
+}
+
+// 回复评价
+export async function replyToReview(reviewId: string, reply: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("reviews")
+      .update({ reply: reply })
+      .eq("id", reviewId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "回复评价失败" };
+  }
+}
+
+// 删除评价
+export async function deleteReview(reviewId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", reviewId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: "删除评价失败" };
   }
 }

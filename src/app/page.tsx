@@ -6,16 +6,36 @@ import { useEffect, useState } from "react";
 import { getCanteens, getCanteenRating, getCanteenDisplayName } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
+import NebulaBackground from "@/components/NebulaBackground";
+import MyTray from "@/components/MyTray";
+import CanteenHeatmap from "@/components/CanteenHeatmap";
+import NutritionDashboard from "@/components/NutritionDashboard";
+
+interface FoodItem {
+  id: string;
+  name: string;
+  color: string;
+  emoji: string;
+  nutrition: {
+    carbs: number;
+    protein: number;
+    fat: number;
+    fiber: number;
+    calories: number;
+  };
+}
 
 export default function Home() {
   const [canteenData, setCanteenData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [trayItems, setTrayItems] = useState<FoodItem[]>([]);
+  const [showNutrition, setShowNutrition] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   const fetchCanteenData = async () => {
     try {
       const canteens = await getCanteens();
       
-      // 并行获取所有食堂的评分
       const data = await Promise.all(
         canteens.map(async (canteen) => {
           const rating = await getCanteenRating(canteen.id);
@@ -31,36 +51,89 @@ export default function Home() {
     }
   };
 
+  const addToTray = (item: FoodItem) => {
+    setTrayItems(prev => [...prev, item]);
+  };
+
+  const removeFromTray = (id: string) => {
+    setTrayItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const clearTray = () => {
+    setTrayItems([]);
+  };
+
   useEffect(() => {
     fetchCanteenData();
     
-    // 每30秒刷新一次评分数据
     const interval = setInterval(fetchCanteenData, 30000);
     
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <main className="min-h-screen bg-transparent">
+    <main className="min-h-screen relative overflow-hidden">
+      <NebulaBackground />
       <Navbar />
+      <MyTray 
+        items={trayItems} 
+        onAddItem={addToTray} 
+        onRemoveItem={removeFromTray} 
+        onClearTray={clearTray} 
+      />
+      
+      <div className="fixed top-20 left-6 z-40 flex flex-col gap-2">
+        <button
+          onClick={() => setShowNutrition(!showNutrition)}
+          className={`px-4 py-3 rounded-2xl backdrop-blur-xl border transition-all ${
+            showNutrition 
+              ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white border-transparent shadow-lg' 
+              : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <span>🎯</span>
+            <span>营养看板</span>
+            {showNutrition && <span>✓</span>}
+          </span>
+        </button>
+        <button
+          onClick={() => setShowHeatmap(!showHeatmap)}
+          className={`px-4 py-3 rounded-2xl backdrop-blur-xl border transition-all ${
+            showHeatmap 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-transparent shadow-lg' 
+              : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <span>📊</span>
+            <span>热力图</span>
+            {showHeatmap && <span>✓</span>}
+          </span>
+        </button>
+      </div>
 
-      {/* 主内容区 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 rounded-[2rem] border border-white/50 bg-white/55 backdrop-blur-md shadow-[0_20px_60px_rgba(120,88,58,0.08)] px-6 py-8">
-          <p className="text-sm tracking-[0.2em] text-amber-700/80 uppercase mb-3">Campus Dining</p>
-          <h2 className="text-3xl font-semibold text-stone-900 mb-2">食堂列表</h2>
-          <p className="text-stone-600">更柔和的氛围，更有层次的校园餐饮界面。</p>
+      {showNutrition && <NutritionDashboard items={trayItems} />}
+      {showHeatmap && <CanteenHeatmap />}
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 rounded-[2rem] border border-white/15 bg-white/8 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] px-6 py-8">
+          <p className="text-sm tracking-[0.2em] text-cyan-300/80 uppercase mb-3">Gastronomy Galaxy</p>
+          <h2 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+            美食星云
+          </h2>
+          <p className="text-gray-300">探索美食宇宙，发现校园美味的无限可能</p>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 bg-white/70 backdrop-blur-md rounded-[1.75rem] shadow-[0_16px_50px_rgba(120,88,58,0.08)] border border-white/60">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">加载中...</p>
+          <div className="text-center py-12 bg-white/5 backdrop-blur-xl rounded-[1.75rem] shadow-[0_16px_50px_rgba(0,0,0,0.3)] border border-white/10">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+            <p className="text-gray-300">加载中...</p>
           </div>
         ) : canteenData.length === 0 ? (
-          <div className="text-center py-12 bg-white/70 backdrop-blur-md rounded-[1.75rem] shadow-[0_16px_50px_rgba(120,88,58,0.08)] border border-white/60">
-            <span className="text-4xl text-gray-300 block mb-4">🍽️</span>
-            <p className="text-gray-500">暂无食堂数据</p>
+          <div className="text-center py-12 bg-white/5 backdrop-blur-xl rounded-[1.75rem] shadow-[0_16px_50px_rgba(0,0,0,0.3)] border border-white/10">
+            <span className="text-5xl block mb-4">🚀</span>
+            <p className="text-gray-300">暂无食堂数据</p>
             <p className="text-gray-400 text-sm mt-2">请在 Supabase 数据库中添加食堂信息</p>
           </div>
         ) : (
@@ -69,54 +142,51 @@ export default function Home() {
               <Link
                 key={canteen.id}
                 href={`/canteen/${canteen.id}`}
-                className="bg-white/78 backdrop-blur-md rounded-[1.5rem] border border-white/70 shadow-[0_16px_50px_rgba(120,88,58,0.08)] hover:shadow-[0_22px_60px_rgba(120,88,58,0.14)] transition-all duration-300 overflow-hidden block"
+                className="group bg-white/5 backdrop-blur-xl rounded-[1.5rem] border border-white/10 shadow-[0_16px_50px_rgba(0,0,0,0.3)] hover:shadow-[0_22px_60px_rgba(0,255,255,0.15)] hover:border-cyan-400/30 hover:-translate-y-1 transition-all duration-300 overflow-hidden block"
               >
-                {/* 食堂图片 */}
-                <div className="h-48 bg-gray-200 relative">
+                <div className="h-48 bg-gradient-to-br from-slate-800/50 to-slate-900/50 relative overflow-hidden">
                   {canteen.image_url ? (
                     <Image
                       src={canteen.image_url}
                       alt={canteen.name}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
-                      <span className="text-4xl text-blue-300">🍽️</span>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-6xl opacity-50 animate-pulse">✨</div>
                     </div>
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
                 </div>
 
-                {/* 食堂信息 */}
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-300 transition-colors">
                     {getCanteenDisplayName(canteen.id, canteen.name)}
                   </h3>
 
                   {canteen.location && (
-                    <div className="flex items-center gap-1 text-gray-500 text-sm mb-2">
+                    <div className="flex items-center gap-1 text-gray-400 text-sm mb-2">
                       <span>📍</span>
                       <span>{canteen.location}</span>
                     </div>
                   )}
 
                   {canteen.description && (
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
                       {canteen.description}
                     </p>
                   )}
 
-                  {/* 评分和操作按钮 */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
                     <div className="flex items-center gap-2">
-                      {/* 星级评分显示 */}
                       <StarRating score={canteen.rating} size="md" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-gray-300">
                         {canteen.rating !== null ? `${canteen.rating}分` : "暂无评分"}
                       </span>
                     </div>
-                    <span className="text-blue-500 text-sm font-medium hover:text-blue-600">
-                      查看详情 →
+                    <span className="text-cyan-400 text-sm font-medium hover:text-cyan-300 flex items-center gap-1">
+                      探索 <span className="transition-transform group-hover:translate-x-1">→</span>
                     </span>
                   </div>
                 </div>
