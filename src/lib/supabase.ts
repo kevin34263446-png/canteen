@@ -592,31 +592,77 @@ export async function register(
 // 用户登录
 export async function login(email: string, password: string, userType: string): Promise<AuthResponse> {
   try {
+    console.log('登录尝试:', { email, userType });
+    
+    // 检查 supabase 实例是否存在
+    console.log('supabase 实例:', !!supabase);
+    console.log('supabase URL:', supabaseUrl);
+    console.log('hasSupabaseConfig:', hasSupabaseConfig);
+    
+    // 检查是否有配置
+    if (!hasSupabaseConfig) {
+      console.log('没有 Supabase 配置');
+      return {
+        user: null,
+        token: null,
+        error: "系统配置错误，请联系管理员",
+      };
+    }
+    
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, email, name, user_type, student_id, password, is_admin, height, weight, age, gender, activity_level, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, password, is_admin, created_at, updated_at")
       .eq("email", email)
-      .eq("user_type", userType)
       .single();
 
+    console.log('查询结果:', { user, error });
+
     if (error || !user) {
+      console.log('用户不存在或查询失败:', error);
+      // 更详细的错误信息
+      if (error) {
+        console.log('错误详情:', error.code, error.message);
+      }
       return {
         user: null,
         token: null,
-        error: "邮箱或密码错误",
+        error: `邮箱或密码错误: ${error?.message || '用户不存在'}`,
       };
     }
 
-    // 直接比较密码（不加密）
-    let passwordMatch = password === user.password;
+    // 使用bcrypt验证密码
+    let passwordMatch = false;
+    console.log('密码验证开始:', { inputPassword: password, storedPassword: user.password });
+    
+    try {
+      // 检查存储的密码是否是bcrypt哈希值
+      if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$') || user.password.startsWith('$2y$')) {
+        // 是bcrypt哈希值，使用bcrypt验证
+        passwordMatch = await bcrypt.compare(password, user.password);
+        console.log('bcrypt验证结果:', passwordMatch);
+      } else {
+        // 不是bcrypt哈希值，直接比较
+        passwordMatch = password === user.password;
+        console.log('直接比较结果:', passwordMatch);
+      }
+    } catch (e) {
+      console.log('密码验证失败，尝试直接比较:', e);
+      // 如果bcrypt验证失败，尝试直接比较（可能是旧的明文密码）
+      passwordMatch = password === user.password;
+      console.log('直接比较结果:', passwordMatch);
+    }
 
     if (!passwordMatch) {
+      console.log('密码验证失败');
       return {
         user: null,
         token: null,
         error: "邮箱或密码错误",
       };
     }
+    
+    console.log('密码验证成功');
+
 
     // 生成简单的 token
     const token = btoa(JSON.stringify({ userId: user.id }));
