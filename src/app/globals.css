@@ -3,19 +3,137 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f1e8;
+  --foreground: #2f241d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f7f1e8;
+    --foreground: #2f241d;
   }
+}
+
+html {
+  min-height: 100%;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(236, 168, 88, 0.18), transparent 32%),
+    radial-gradient(circle at top right, rgba(195, 137, 73, 0.14), transparent 28%),
+    radial-gradient(circle at bottom center, rgba(157, 184, 135, 0.14), transparent 30%),
+    linear-gradient(180deg, #fbf7f2 0%, #f4ede3 48%, #efe6da 100%);
   font-family: Arial, Helvetica, sans-serif;
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent 42%),
+    linear-gradient(315deg, rgba(255, 244, 230, 0.45), transparent 38%);
+  opacity: 0.9;
+  z-index: -1;
+}
+
+/* 动态多元元素：柔光漂浮 + 颗粒质感 + 轻涂鸦 */
+@keyframes floatBlobs {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+    filter: blur(10px);
+  }
+  50% {
+    transform: translate3d(2%, 1.5%, 0) scale(1.02);
+    filter: blur(12px);
+  }
+  100% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+    filter: blur(10px);
+  }
+}
+
+@keyframes driftDoodles {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(-18px, 10px, 0);
+    opacity: 0.22;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+  }
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  pointer-events: none;
+  z-index: -2;
+
+  /* 1) 柔光漂浮（高级但不冷） */
+  background:
+    radial-gradient(40% 32% at 18% 22%, rgba(236, 168, 88, 0.22), transparent 65%),
+    radial-gradient(38% 30% at 82% 18%, rgba(157, 184, 135, 0.18), transparent 62%),
+    radial-gradient(34% 26% at 70% 78%, rgba(195, 137, 73, 0.16), transparent 62%),
+    radial-gradient(30% 24% at 28% 84%, rgba(251, 191, 36, 0.12), transparent 62%),
+
+    /* 2) 极轻颗粒（让页面更“高级”） */
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.02) 0px,
+      rgba(0, 0, 0, 0.02) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.012) 0px,
+      rgba(0, 0, 0, 0.012) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+  animation: floatBlobs 16s ease-in-out infinite;
+}
+
+.bg-doodles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bg-doodles::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 28%, rgba(47, 36, 29, 0.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 30%, rgba(47, 36, 29, 0.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 80% 72%, rgba(47, 36, 29, 0.055) 0 1px, transparent 2px),
+    radial-gradient(circle at 28% 76%, rgba(47, 36, 29, 0.055) 0 1px, transparent 2px);
+  opacity: 0.28;
+  animation: driftDoodles 22s ease-in-out infinite;
+}
+
+/* 尊重系统设置：减少动效 */
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+  }
+  .bg-doodles::before {
+    animation: none;
+  }
 }

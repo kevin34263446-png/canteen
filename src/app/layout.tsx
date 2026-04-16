@@ -18,6 +18,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className}>
+        <div className="bg-doodles" aria-hidden="true" />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

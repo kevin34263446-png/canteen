@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes } from "@/lib/supabase";
+import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
@@ -31,6 +31,23 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("全部");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showDishForm, setShowDishForm] = useState<boolean>(false);
+  const [creatingDish, setCreatingDish] = useState<boolean>(false);
+  const [dishForm, setDishForm] = useState<{
+    stall_id: string;
+    name: string;
+    category: string;
+    price: string;
+    description: string;
+    file: File | null;
+  }>({
+    stall_id: "",
+    name: "",
+    category: "",
+    price: "",
+    description: "",
+    file: null,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,6 +113,68 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     setReviews(reviewsData);
     setAvgRating(ratingData);
     setShowReviewForm(false);
+  };
+
+  const refreshDishes = async () => {
+    const [dishesData, categoriesData] = await Promise.all([
+      getCanteenDishes(params.id),
+      getDishCategories(params.id),
+    ]);
+    setDishes(dishesData);
+    setCategories(["全部", ...categoriesData]);
+  };
+
+  const handleCreateDish = async () => {
+    if (!dishForm.stall_id) {
+      alert("请选择档口");
+      return;
+    }
+    if (!dishForm.name.trim()) {
+      alert("请输入菜品名称");
+      return;
+    }
+    const price = Number(dishForm.price);
+    if (!Number.isFinite(price) || price < 0) {
+      alert("请输入正确的价格");
+      return;
+    }
+
+    setCreatingDish(true);
+    try {
+      let imageUrl: string | null = null;
+      if (dishForm.file) {
+        imageUrl = await uploadDishImage({
+          file: dishForm.file,
+          canteenId: params.id,
+          stallId: dishForm.stall_id,
+        });
+      }
+
+      await createDish({
+        canteen_id: params.id,
+        stall_id: dishForm.stall_id,
+        name: dishForm.name.trim(),
+        category: (dishForm.category.trim() || "未分类"),
+        price,
+        description: dishForm.description.trim() || null,
+        image_url: imageUrl,
+      });
+
+      setShowDishForm(false);
+      setDishForm({
+        stall_id: "",
+        name: "",
+        category: "",
+        price: "",
+        description: "",
+        file: null,
+      });
+      await refreshDishes();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "新增菜品失败");
+    } finally {
+      setCreatingDish(false);
+    }
   };
 
   // 处理档口选择
@@ -185,7 +264,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">加载中...</p>
@@ -199,15 +278,15 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-transparent">
       <Navbar />
       
       {/* 头部导航 */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className="bg-white/55 backdrop-blur-xl border-b border-white/50 shadow-[0_10px_30px_rgba(120,88,58,0.06)] sticky top-16 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="inline-flex items-center gap-2 text-stone-600 hover:text-stone-900 transition-colors"
           >
             <span>←</span>
             <span>返回列表</span>
@@ -218,7 +297,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
       {/* 食堂详情 */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 图片区域 */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+        <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] overflow-hidden mb-6">
           <div className="h-64 md:h-80 bg-gray-200 relative">
             {canteen.image_url ? (
               <Image
@@ -236,7 +315,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
 
           {/* 信息区域 */}
           <div className="p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{canteen.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{getCanteenDisplayName(params.id, canteen.name)}</h1>
 
             <div className="flex flex-wrap gap-4 mb-6">
               {canteen.location && (
@@ -274,7 +353,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         </div>
 
         {/* 档口区域 */}
-        <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
+        <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">档口列表</h2>
           
           {stalls.length === 0 ? (
@@ -289,8 +368,8 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                   key={stall.id} 
                   onClick={() => handleStallSelect(stall.id)}
                   className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${activeStall === stall.id 
-                    ? 'border-blue-600 bg-blue-50' 
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'}`}
+                    ? 'border-amber-500 bg-amber-50/80 shadow-[0_12px_30px_rgba(217,119,6,0.12)]' 
+                    : 'border-stone-200 hover:border-amber-200 hover:bg-white/80'}`}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200">
@@ -321,15 +400,23 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         </div>
 
         {/* 菜品区域 */}
-        <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            菜品列表
-            {activeStall && (
-              <span className="text-sm font-normal text-gray-500 ml-2">
-                (来自: {stalls.find(s => s.id === activeStall)?.name})
-              </span>
-            )}
-          </h2>
+        <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] p-8 mb-8">
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              菜品列表
+              {activeStall && (
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  (来自: {stalls.find(s => s.id === activeStall)?.name})
+                </span>
+              )}
+            </h2>
+            <button
+              onClick={() => setShowDishForm(true)}
+              className="shrink-0 rounded-full bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow-[0_10px_24px_rgba(217,119,6,0.24)] hover:bg-amber-700 transition-colors"
+            >
+              + 新增菜品
+            </button>
+          </div>
 
           {/* 搜索框 */}
           <div className="mb-6">
@@ -362,8 +449,8 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 key={category}
                 onClick={() => setActiveCategory(category)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeCategory === category 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  ? 'bg-amber-600 text-white shadow-[0_10px_24px_rgba(217,119,6,0.24)]' 
+                  : 'bg-stone-100/90 text-stone-700 hover:bg-stone-200/90'}`}
               >
                 {category}
               </button>
@@ -415,7 +502,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         </div>
 
         {/* 评价区域 */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">用户评价</h2>
             <button
@@ -497,6 +584,116 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
               canteenId={params.id}
               onSuccess={handleReviewSuccess}
             />
+          </div>
+        </div>
+      )}
+
+      {/* 新增菜品模态框 */}
+      {showDishForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">新增菜品</h3>
+              <button
+                onClick={() => setShowDishForm(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+                disabled={creatingDish}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">档口</label>
+                <select
+                  value={dishForm.stall_id}
+                  onChange={(e) => setDishForm((s) => ({ ...s, stall_id: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                >
+                  <option value="">请选择档口</option>
+                  {stalls.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {stalls.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-2">当前没有档口数据，请先在数据库创建档口。</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">菜品名称</label>
+                  <input
+                    value={dishForm.name}
+                    onChange={(e) => setDishForm((s) => ({ ...s, name: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    placeholder="例如：宫保鸡丁"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                  <input
+                    value={dishForm.category}
+                    onChange={(e) => setDishForm((s) => ({ ...s, category: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    placeholder="例如：炒菜/面食/饮品"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">价格（元）</label>
+                  <input
+                    value={dishForm.price}
+                    onChange={(e) => setDishForm((s) => ({ ...s, price: e.target.value }))}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    placeholder="例如：12.5"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">图片（可选）</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setDishForm((s) => ({ ...s, file: e.target.files?.[0] || null }))}
+                    className="w-full text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">描述（可选）</label>
+                <textarea
+                  value={dishForm.description}
+                  onChange={(e) => setDishForm((s) => ({ ...s, description: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  placeholder="简单介绍一下这道菜…"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setShowDishForm(false)}
+                  className="px-4 py-2 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  disabled={creatingDish}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCreateDish}
+                  className="px-5 py-2 rounded-full text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-60"
+                  disabled={creatingDish || stalls.length === 0}
+                >
+                  {creatingDish ? "提交中..." : "提交"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
