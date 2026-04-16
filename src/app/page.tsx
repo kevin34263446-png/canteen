@@ -10,6 +10,8 @@ import NebulaBackground from "@/components/NebulaBackground";
 import MyTray from "@/components/MyTray";
 import CanteenHeatmap from "@/components/CanteenHeatmap";
 import NutritionDashboard from "@/components/NutritionDashboard";
+import AIAssistant from "@/components/AIAssistant";
+import { Sparkles } from "lucide-react";
 
 interface FoodItem {
   id: string;
@@ -31,6 +33,7 @@ export default function Home() {
   const [trayItems, setTrayItems] = useState<FoodItem[]>([]);
   const [showNutrition, setShowNutrition] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const fetchCanteenData = async () => {
     try {
@@ -115,6 +118,14 @@ export default function Home() {
 
       {showNutrition && <NutritionDashboard items={trayItems} />}
       {showHeatmap && <CanteenHeatmap />}
+      <AIAssistant isOpen={showAIAssistant} onClose={() => setShowAIAssistant(false)} />
+      
+      <button
+        onClick={() => setShowAIAssistant(true)}
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] transition-all flex items-center justify-center"
+      >
+        <Sparkles className="w-7 h-7" />
+      </button>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 rounded-[2rem] border border-white/15 bg-white/8 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] px-6 py-8">
