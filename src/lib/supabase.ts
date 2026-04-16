@@ -551,14 +551,12 @@ export async function register(
       };
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 创建新用户
+    // 创建新用户（不加密密码）
     const { data: newUser, error } = await supabase
       .from("users")
       .insert({
         email,
-        password: hashedPassword,
+        password: password,
         name,
         user_type: userType,
         student_id: studentId,
@@ -609,21 +607,8 @@ export async function login(email: string, password: string, userType: string): 
       };
     }
 
-    // 兼容旧密码：先尝试 bcrypt 验证，失败则直接比较明文（临时方案）
-    let passwordMatch = false;
-    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
-      passwordMatch = await bcrypt.compare(password, user.password);
-    } else {
-      passwordMatch = password === user.password;
-      // 如果是明文密码，登录成功后自动更新为加密密码
-      if (passwordMatch) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await supabase
-          .from("users")
-          .update({ password: hashedPassword })
-          .eq("id", user.id);
-      }
-    }
+    // 直接比较密码（不加密）
+    let passwordMatch = password === user.password;
 
     if (!passwordMatch) {
       return {
@@ -1490,15 +1475,14 @@ export async function changePassword(userId: string, oldPassword: string, newPas
       return { success: false, error: "用户不存在" };
     }
 
-    const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+    const passwordMatch = oldPassword === user.password;
     if (!passwordMatch) {
       return { success: false, error: "原密码错误" };
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
     const { error: updateError } = await supabase
       .from("users")
-      .update({ password: hashedPassword })
+      .update({ password: newPassword })
       .eq("id", userId);
 
     if (updateError) {
@@ -1514,10 +1498,9 @@ export async function changePassword(userId: string, oldPassword: string, newPas
 // 重置密码
 export async function resetPassword(email: string, newPassword: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
     const { error: updateError } = await supabase
       .from("users")
-      .update({ password: hashedPassword })
+      .update({ password: newPassword })
       .eq("email", email);
 
     if (updateError) {
@@ -1650,10 +1633,9 @@ export async function setAdmin(userId: string, isAdmin: boolean): Promise<{ succ
 // 管理员重置用户密码
 export async function adminResetPassword(userId: string, newPassword: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
     const { error } = await supabase
       .from("users")
-      .update({ password: hashedPassword })
+      .update({ password: newPassword })
       .eq("id", userId);
 
     if (error) {
