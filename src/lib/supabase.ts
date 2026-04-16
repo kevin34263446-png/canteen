@@ -332,6 +332,11 @@ export type User = {
   user_type: string;
   student_id: string;
   is_admin?: boolean;
+  height?: number;
+  weight?: number;
+  age?: number;
+  gender?: 'male' | 'female';
+  activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   created_at: string;
   updated_at: string;
 };
@@ -591,7 +596,7 @@ export async function login(email: string, password: string, userType: string): 
   try {
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, email, name, user_type, student_id, password, is_admin, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, password, is_admin, height, weight, age, gender, activity_level, created_at, updated_at")
       .eq("email", email)
       .eq("user_type", userType)
       .single();
@@ -1525,11 +1530,80 @@ export async function resetPassword(email: string, newPassword: string): Promise
   }
 }
 
+// 更新用户身体信息
+export async function updateUserProfile(
+  userId: string,
+  profile: {
+    height?: number;
+    weight?: number;
+    age?: number;
+    gender?: 'male' | 'female';
+    activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  }
+): Promise<{ success: boolean; error: string | null; user?: User }> {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .update({ ...profile, updated_at: new Date().toISOString() })
+      .eq("id", userId)
+      .select("*")
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, error: null, user: data };
+  } catch (error) {
+    return { success: false, error: "更新用户信息失败" };
+  }
+}
+
+// 计算每日推荐营养摄入量
+export function calculateDailyGoals(user: User) {
+  const { height, weight, age, gender, activity_level } = user;
+
+  if (!weight || !age || !gender) {
+    return {
+      carbs: 300,
+      protein: 150,
+      fat: 80,
+      fiber: 30,
+      calories: 2000
+    };
+  }
+
+  let bmr;
+  if (gender === 'male') {
+    bmr = 88.362 + (13.397 * weight) + (4.799 * (height || 170)) - (5.677 * age);
+  } else {
+    bmr = 447.593 + (9.247 * weight) + (3.098 * (height || 160)) - (4.330 * age);
+  }
+
+  const activityMultipliers: Record<string, number> = {
+    sedentary: 1.2,
+    light: 1.375,
+    moderate: 1.55,
+    active: 1.725,
+    very_active: 1.9
+  };
+
+  const tdee = bmr * (activityMultipliers[activity_level || 'sedentary']);
+
+  return {
+    carbs: Math.round((tdee * 0.5) / 4),
+    protein: Math.round((tdee * 0.25) / 4),
+    fat: Math.round((tdee * 0.25) / 9),
+    fiber: Math.round(weight * 0.25),
+    calories: Math.round(tdee)
+  };
+}
+
 // 根据邮箱获取用户
 export async function getUserByEmail(email: string): Promise<User | null> {
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
+    .select("id, email, name, user_type, student_id, is_admin, height, weight, age, gender, activity_level, created_at, updated_at")
     .eq("email", email)
     .single();
 
@@ -1544,7 +1618,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function getAllUsers(): Promise<User[]> {
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
+    .select("id, email, name, user_type, student_id, is_admin, height, weight, age, gender, activity_level, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {

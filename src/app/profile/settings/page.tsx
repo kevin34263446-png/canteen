@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, getUserById } from "@/lib/supabase";
+import { User, getUserById, updateUserProfile } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Lock } from "lucide-react";
@@ -9,13 +9,16 @@ import { Lock } from "lucide-react";
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [editing, setEditing] = useState<boolean>(false);
-  const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [userType, setUserType] = useState<string>('student');
-  const [studentId, setStudentId] = useState<string>('');
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [saving, setSaving] = useState<boolean>(false);
+  
+  const [height, setHeight] = useState<number | ''>('');
+  const [weight, setWeight] = useState<number | ''>('');
+  const [age, setAge] = useState<number | ''>('');
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [activityLevel, setActivityLevel] = useState<'sedentary' | 'light' | 'moderate' | 'active' | 'very_active' | ''>('');
+  const [savingProfile, setSavingProfile] = useState<boolean>(false);
+  const [profileSuccess, setProfileSuccess] = useState<string>('');
+  const [profileError, setProfileError] = useState<string>('');
+
   const [showChangePassword, setShowChangePassword] = useState<boolean>(false);
   const [oldPassword, setOldPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
@@ -34,10 +37,11 @@ export default function SettingsPage() {
           const userData = await getUserById(decoded.userId);
           setUser(userData);
           if (userData) {
-            setName(userData.name);
-            setEmail(userData.email);
-            setUserType(userData.user_type);
-            setStudentId(userData.student_id);
+            setHeight(userData.height || '');
+            setWeight(userData.weight || '');
+            setAge(userData.age || '');
+            setGender(userData.gender || '');
+            setActivityLevel(userData.activity_level || '');
           }
         }
       } catch (error) {
@@ -50,63 +54,44 @@ export default function SettingsPage() {
     fetchUser();
   }, []);
 
-  const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
-    // 验证用户名
-    if (!name.trim()) {
-      newErrors.name = '请输入用户名';
-    } else if (name.length < 3 || name.length > 20) {
-      newErrors.name = '用户名长度应在3-20个字符之间';
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-      newErrors.name = '用户名只能包含字母、数字、下划线和连字符';
-    }
-    
-    // 验证邮箱
-    if (!email.trim()) {
-      newErrors.email = '请输入邮箱';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = '请输入有效的邮箱地址';
-    }
-    
-    // 验证身份标识
-    if (!studentId.trim()) {
-      newErrors.studentId = userType === 'student' ? '请输入学号' : '请输入工号';
-    } else if (userType === 'student' && studentId.length !== 10) {
-      newErrors.studentId = '学号必须为10位';
-    } else if (userType === 'staff' && studentId.length !== 8) {
-      newErrors.studentId = '工号必须为8位';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    setProfileError('');
+    setProfileSuccess('');
 
-  const handleSave = async () => {
-    if (!validateForm()) {
-      return;
-    }
-    
-    setSaving(true);
     try {
-      // 实际项目中应该调用 API 更新用户信息
-      console.log('保存用户资料:', {
-        name,
-        email,
-        user_type: userType,
-        student_id: studentId
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setProfileError('请先登录');
+        return;
+      }
+      const decoded = JSON.parse(atob(token));
+
+      const result = await updateUserProfile(decoded.userId, {
+        height: height ? Number(height) : undefined,
+        weight: weight ? Number(weight) : undefined,
+        age: age ? Number(age) : undefined,
+        gender: gender || undefined,
+        activity_level: activityLevel || undefined
       });
-      
-      // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      alert('保存成功！');
-      setEditing(false);
-    } catch (error) {
-      console.error('保存失败:', error);
-      alert('保存失败，请重试');
+
+      if (result.success && result.user) {
+        setUser(result.user);
+        setProfileSuccess('身体信息保存成功！');
+        
+        const updatedUser = { ...user, ...result.user } as User;
+        const newToken = btoa(JSON.stringify({ userId: updatedUser.id }));
+        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        setTimeout(() => setProfileSuccess(''), 3000);
+      } else {
+        setProfileError(result.error || '保存失败');
+      }
+    } catch (err) {
+      setProfileError('保存失败，请重试');
     } finally {
-      setSaving(false);
+      setSavingProfile(false);
     }
   };
 
@@ -201,7 +186,6 @@ export default function SettingsPage() {
     <main className="min-h-screen bg-gray-50">
       <Navbar />
       
-      {/* 头部导航 */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
@@ -214,166 +198,111 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      {/* 设置内容 */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">设置</h2>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">个人资料</h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-              {editing ? (
-                <>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 ${
-                      errors.name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-900">{user.name}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
-              {editing ? (
-                <>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-900">{user.email}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">身份</label>
-              {editing ? (
-                <div className="flex space-x-4">
-                  <div className="flex items-center">
-                    <input
-                      id="student"
-                      name="userType"
-                      type="radio"
-                      value="student"
-                      checked={userType === "student"}
-                      onChange={() => setUserType("student")}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <label htmlFor="student" className="ml-2 block text-sm text-gray-900">
-                      学生
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      id="staff"
-                      name="userType"
-                      type="radio"
-                      value="staff"
-                      checked={userType === "staff"}
-                      onChange={() => setUserType("staff")}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <label htmlFor="staff" className="ml-2 block text-sm text-gray-900">
-                      教职工
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-900">{user.user_type === 'student' ? '学生' : '教职工'}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {userType === 'student' ? '学号' : '工号'}
-              </label>
-              {editing ? (
-                <>
-                  <input
-                    type="text"
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 ${
-                      errors.studentId ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.studentId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.studentId}</p>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-900">{user.student_id}</p>
-              )}
-            </div>
-            
-            <div className="pt-4">
-              {editing ? (
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                        <span>保存中...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>💾</span>
-                        <span>保存</span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditing(false);
-                      setErrors({});
-                      if (user) {
-                        setName(user.name);
-                        setEmail(user.email);
-                        setUserType(user.user_type);
-                        setStudentId(user.student_id);
-                      }
-                    }}
-                    className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <span>✕</span>
-                    <span>取消</span>
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="text-blue-500 hover:text-blue-600 transition-colors"
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">身体信息</h3>
+            <p className="text-sm text-gray-500 mb-4">完善身体信息，营养看板将根据您的数据计算每日推荐摄入量</p>
+
+            {profileSuccess && (
+              <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-3">
+                <p className="text-green-600 text-sm">{profileSuccess}</p>
+              </div>
+            )}
+            {profileError && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-red-600 text-sm">{profileError}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">身高 (cm)</label>
+                <input
+                  type="number"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  placeholder="例如: 175"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">体重 (kg)</label>
+                <input
+                  type="number"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  placeholder="例如: 70"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">年龄</label>
+                <input
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="例如: 25"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as 'male' | 'female')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
                 >
-                  编辑资料
-                </button>
-              )}
+                  <option value="">请选择</option>
+                  <option value="male">男</option>
+                  <option value="female">女</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">活动水平</label>
+                <select
+                  value={activityLevel}
+                  onChange={(e) => setActivityLevel(e.target.value as any)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                >
+                  <option value="">请选择</option>
+                  <option value="sedentary">久坐不动（很少或不锻炼）</option>
+                  <option value="light">轻度活动（每周1-3天锻炼）</option>
+                  <option value="moderate">中度活动（每周3-5天锻炼）</option>
+                  <option value="active">高度活动（每周6-7天锻炼）</option>
+                  <option value="very_active">极高活动（专业运动员水平）</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingProfile ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    <span>保存中...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    <span>保存身体信息</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
-          
-          <div className="mt-8 pt-8 border-t border-gray-100">
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">账号安全</h3>
             <div className="space-y-4">
               <div className="hover:bg-gray-50 p-3 rounded-lg transition-colors">
@@ -450,62 +379,6 @@ export default function SettingsPage() {
                     </button>
                   </div>
                 )}
-              </div>
-              <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <span>📱</span>
-                  </div>
-                  <span className="text-gray-700">绑定手机</span>
-                </div>
-                <button 
-                  className="text-blue-500 hover:text-blue-600 transition-colors"
-                  onClick={() => {
-                    alert('绑定手机功能开发中');
-                  }}
-                >
-                  立即绑定
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-8 pt-8 border-t border-gray-100">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">其他设置</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <span>🔔</span>
-                  </div>
-                  <span className="text-gray-700">通知设置</span>
-                </div>
-                <button 
-                  className="text-blue-500 hover:text-blue-600 transition-colors"
-                  onClick={() => {
-                    // 实际项目中应该跳转到通知设置页面
-                    alert('通知设置功能开发中');
-                  }}
-                >
-                  查看
-                </button>
-              </div>
-              <div className="flex items-center justify-between hover:bg-gray-50 p-3 rounded-lg transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <span>ℹ️</span>
-                  </div>
-                  <span className="text-gray-700">关于我们</span>
-                </div>
-                <button 
-                  className="text-blue-500 hover:text-blue-600 transition-colors"
-                  onClick={() => {
-                    // 实际项目中应该跳转到关于我们页面
-                    alert('关于我们功能开发中');
-                  }}
-                >
-                  查看
-                </button>
               </div>
             </div>
           </div>

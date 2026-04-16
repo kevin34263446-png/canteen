@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/auth';
+import { calculateDailyGoals, User } from '@/lib/supabase';
 
 interface FoodItem {
   id: string;
@@ -23,6 +25,7 @@ interface NutritionDashboardProps {
 }
 
 const NutritionDashboard = ({ items }: NutritionDashboardProps) => {
+  const { user } = useAuth();
   const [totalNutrition, setTotalNutrition] = useState({
     carbs: 0,
     protein: 0,
@@ -31,13 +34,20 @@ const NutritionDashboard = ({ items }: NutritionDashboardProps) => {
     calories: 0
   });
 
-  const [goals] = useState({
+  const [goals, setGoals] = useState({
     carbs: 300,
     protein: 150,
     fat: 80,
     fiber: 30,
     calories: 2000
   });
+
+  useEffect(() => {
+    if (user) {
+      const calculatedGoals = calculateDailyGoals(user as User);
+      setGoals(calculatedGoals);
+    }
+  }, [user]);
 
   const chartRef = useRef<any>(null);
 
