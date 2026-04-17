@@ -6,7 +6,7 @@ const APP_ID = process.env.TENCENT_SMS_APP_ID || '';
 const SIGN_NAME = process.env.TENCENT_SMS_SIGN_NAME || '';
 const TEMPLATE_ID = process.env.TENCENT_SMS_TEMPLATE_ID || '';
 
-function hmacsha256(key: string, msg: string) {
+function hmacsha256(key: string | Buffer, msg: string) {
   return crypto.createHmac('sha256', key).update(msg).digest();
 }
 

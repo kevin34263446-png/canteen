@@ -223,7 +223,7 @@ export default function SettingsPage() {
                 <input
                   type="number"
                   value={height}
-                  onChange={(e) => setHeight(e.target.value)}
+                  onChange={(e) => setHeight(e.target.value ? Number(e.target.value) : "")}
                   placeholder="例如: 175"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
                 />
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                 <input
                   type="number"
                   value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  onChange={(e) => setWeight(e.target.value ? Number(e.target.value) : "")}
                   placeholder="例如: 70"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
                 />
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                 <input
                   type="number"
                   value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  onChange={(e) => setAge(e.target.value ? Number(e.target.value) : "")}
                   placeholder="例如: 25"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
                 />

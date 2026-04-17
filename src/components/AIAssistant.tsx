@@ -59,6 +59,7 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         content: data.content
       }]);
     } catch (error) {
+      console.error('AI request failed:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: '抱歉，我暂时无法回应。请检查DeepSeek API配置或稍后重试。'

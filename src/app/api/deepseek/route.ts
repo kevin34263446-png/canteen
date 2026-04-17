@@ -42,6 +42,15 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('DeepSeek API Error:', error);
+
+    // 检查是否是余额不足错误
+    if (error.status === 402 || error.message?.includes('Insufficient Balance')) {
+      return NextResponse.json({
+        error: 'AI服务暂时不可用（API余额不足），请稍后再试或联系管理员充值。',
+        code: 'INSUFFICIENT_BALANCE'
+      }, { status: 402 });
+    }
+
     return NextResponse.json(
       { error: error.message || '请求失败，请稍后重试' },
       { status: 500 }

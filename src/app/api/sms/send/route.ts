@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendSms, generateCode } from '@/lib/tencentCloud';
-
-const codeStore = new Map<string, { code: string; expiresAt: number }>();
+import { codeStore } from '@/lib/smsCodeStore';
 
 export async function POST(request: Request) {
   try {
@@ -38,5 +37,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: '发送失败' }, { status: 500 });
   }
 }
-
-export { codeStore };

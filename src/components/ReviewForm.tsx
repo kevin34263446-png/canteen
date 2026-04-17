@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createReview } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { moderateForumContent } from "@/lib/ai";
 
 interface ReviewFormProps {
   canteenId: string;
@@ -36,11 +37,14 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
     setError("");
 
     try {
+      // 先通过AI审核内容
+      const moderatedContent = await moderateForumContent(content);
+      
       const result = await createReview({
         canteen_id: canteenId,
         user_id: user.id,
         rating,
-        content,
+        content: moderatedContent,
         user_name: user?.name || "未登录用户",
         is_anonymous: isAnonymous,
       });

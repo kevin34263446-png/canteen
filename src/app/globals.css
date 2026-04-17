@@ -3,15 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --background: #f7f1e8;
-  --foreground: #2f241d;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #f7f1e8;
-    --foreground: #2f241d;
-  }
+  --background: #121212;
+  --foreground: #e0e0e0;
+  --card-bg: rgba(18, 18, 18, 0.7);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --accent: #6366f1;
+  --accent-light: #818cf8;
 }
 
 html {
@@ -22,10 +19,10 @@ body {
   color: var(--foreground);
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(236, 168, 88, 0.18), transparent 32%),
-    radial-gradient(circle at top right, rgba(195, 137, 73, 0.14), transparent 28%),
-    radial-gradient(circle at bottom center, rgba(157, 184, 135, 0.14), transparent 30%),
-    linear-gradient(180deg, #fbf7f2 0%, #f4ede3 48%, #efe6da 100%);
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.18), transparent 32%),
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.14), transparent 28%),
+    radial-gradient(circle at bottom center, rgba(59, 130, 246, 0.14), transparent 30%),
+    linear-gradient(180deg, #1a1a1a 0%, #121212 48%, #0f0f0f 100%);
   font-family: Arial, Helvetica, sans-serif;
   background-attachment: fixed;
 }
@@ -36,8 +33,8 @@ body::before {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent 42%),
-    linear-gradient(315deg, rgba(255, 244, 230, 0.45), transparent 38%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 42%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.03), transparent 38%);
   opacity: 0.9;
   z-index: -1;
 }
@@ -80,30 +77,30 @@ body::after {
   pointer-events: none;
   z-index: -2;
 
-  /* 1) 柔光漂浮（高级但不冷） */
+  /* 1) 柔光漂浮（科技感） */
   background:
-    radial-gradient(40% 32% at 18% 22%, rgba(236, 168, 88, 0.22), transparent 65%),
-    radial-gradient(38% 30% at 82% 18%, rgba(157, 184, 135, 0.18), transparent 62%),
-    radial-gradient(34% 26% at 70% 78%, rgba(195, 137, 73, 0.16), transparent 62%),
-    radial-gradient(30% 24% at 28% 84%, rgba(251, 191, 36, 0.12), transparent 62%),
+    radial-gradient(40% 32% at 18% 22%, rgba(99, 102, 241, 0.22), transparent 65%),
+    radial-gradient(38% 30% at 82% 18%, rgba(124, 58, 237, 0.18), transparent 62%),
+    radial-gradient(34% 26% at 70% 78%, rgba(59, 130, 246, 0.16), transparent 62%),
+    radial-gradient(30% 24% at 28% 84%, rgba(16, 185, 129, 0.12), transparent 62%),
 
     /* 2) 极轻颗粒（让页面更“高级”） */
     repeating-linear-gradient(
       0deg,
-      rgba(0, 0, 0, 0.02) 0px,
-      rgba(0, 0, 0, 0.02) 1px,
+      rgba(255, 255, 255, 0.02) 0px,
+      rgba(255, 255, 255, 0.02) 1px,
       transparent 1px,
       transparent 4px
     ),
     repeating-linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.012) 0px,
-      rgba(0, 0, 0, 0.012) 1px,
+      rgba(255, 255, 255, 0.012) 0px,
+      rgba(255, 255, 255, 0.012) 1px,
       transparent 1px,
       transparent 5px
     );
 
-  mix-blend-mode: multiply;
+  mix-blend-mode: overlay;
   opacity: 0.9;
   animation: floatBlobs 16s ease-in-out infinite;
 }
@@ -120,12 +117,40 @@ body::after {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 22% 28%, rgba(47, 36, 29, 0.06) 0 1px, transparent 2px),
-    radial-gradient(circle at 74% 30%, rgba(47, 36, 29, 0.06) 0 1px, transparent 2px),
-    radial-gradient(circle at 80% 72%, rgba(47, 36, 29, 0.055) 0 1px, transparent 2px),
-    radial-gradient(circle at 28% 76%, rgba(47, 36, 29, 0.055) 0 1px, transparent 2px);
+    radial-gradient(circle at 22% 28%, rgba(255, 255, 255, 0.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 30%, rgba(255, 255, 255, 0.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 80% 72%, rgba(255, 255, 255, 0.055) 0 1px, transparent 2px),
+    radial-gradient(circle at 28% 76%, rgba(255, 255, 255, 0.055) 0 1px, transparent 2px);
   opacity: 0.28;
   animation: driftDoodles 22s ease-in-out infinite;
+}
+
+/* Glassmorphism 样式 */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-dark {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 /* 尊重系统设置：减少动效 */

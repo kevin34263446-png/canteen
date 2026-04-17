@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resetPassword, getUserByEmail } from '@/lib/supabase';
-import { codeStore } from '../../sms/send/route';
+import { codeStore } from '@/lib/smsCodeStore';
 
 export async function POST(request: Request) {
   try {

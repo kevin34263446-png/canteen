@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { codeStore } from '../send/route';
+import { codeStore } from '@/lib/smsCodeStore';
 
 export async function POST(request: Request) {
   try {
