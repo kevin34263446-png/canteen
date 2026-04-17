@@ -912,10 +912,28 @@ export async function getCanteens(): Promise<Canteen[]> {
 export async function getCanteenById(id: string): Promise<Canteen | null> {
   // 从模拟数据中查找
   const mockCanteens = getMockCanteens();
-  const canteen = mockCanteens.find(c => c.id === id);
-  if (canteen) {
-    return canteen;
+  const mockCanteen = mockCanteens.find(c => c.id === id);
+  if (mockCanteen) {
+    return mockCanteen;
   }
+  
+  // 如果 Supabase 配置存在，尝试从 Supabase 获取
+  if (hasSupabaseConfig) {
+    try {
+      const { data, error } = await supabase
+        .from("canteens")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (data && !error) {
+        return data;
+      }
+    } catch (error) {
+      console.error("从 Supabase 获取食堂数据失败:", error);
+    }
+  }
+  
   return null;
 }
 
@@ -1112,6 +1130,13 @@ export async function createDish(data: {
 
 // 获取食堂的平均评分
 export async function getCanteenRating(canteenId: string): Promise<number | null> {
+  // 如果没有 Supabase 配置，返回模拟评分
+  if (!hasSupabaseConfig) {
+    // 返回一个基于食堂ID的相对稳定的模拟评分
+    const hash = canteenId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return (3.5 + (hash % 15) / 10);
+  }
+
   const { data, error } = await supabase
     .from("reviews")
     .select("rating")
