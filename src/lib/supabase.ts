@@ -909,7 +909,22 @@ function getMockCanteens(): Canteen[] {
 
 // 获取所有食堂数据
 export async function getCanteens(): Promise<Canteen[]> {
-  // 优先使用模拟数据，确保显示四个中国校园食堂
+  // 优先从 Supabase 获取数据
+  if (hasSupabaseConfig) {
+    try {
+      const { data, error } = await supabase
+        .from("canteens")
+        .select("*");
+
+      if (!error && data && data.length > 0) {
+        return data;
+      }
+    } catch (error) {
+      console.error("从 Supabase 获取食堂数据失败:", error);
+    }
+  }
+  
+  // 如果 Supabase 没有数据或不可用，使用模拟数据
   console.log("使用模拟食堂数据");
   return getMockCanteens();
 }
@@ -1193,15 +1208,33 @@ export async function createDish(data: {
 export async function getCanteenRating(canteenId: string): Promise<number | null> {
   // 如果没有 Supabase 配置，返回模拟评分
   if (!hasSupabaseConfig) {
-    // 返回一个基于食堂ID的相对稳定的模拟评分
     const hash = canteenId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return (3.5 + (hash % 15) / 10);
+  }
+
+  let queryId = canteenId;
+  
+  // 如果 canteenId 是 "canteen-1" 格式，需要先查询 Supabase 中的 UUID
+  if (canteenId.startsWith('canteen-')) {
+    try {
+      const { data: canteenData, error: canteenError } = await supabase
+        .from("canteens")
+        .select("id")
+        .eq("name", getCanteenNameFromId(canteenId))
+        .single();
+      
+      if (!canteenError && canteenData) {
+        queryId = canteenData.id;
+      }
+    } catch (error) {
+      console.error("查询食堂UUID失败:", error);
+    }
   }
 
   const { data, error } = await supabase
     .from("reviews")
     .select("rating")
-    .eq("canteen_id", canteenId);
+    .eq("canteen_id", queryId);
 
   if (error || !data || data.length === 0) {
     return null;
@@ -1520,13 +1553,21 @@ export async function getUserFavorites(userId: string): Promise<Canteen[]> {
 
 // 获取食堂排行榜（按评分排序）
 export async function getCanteenRanking(): Promise<(Canteen & { rating: number })[]> {
-  // 首先获取所有食堂
-  const { data: canteens, error } = await supabase
-    .from("canteens")
-    .select("*");
+  // 首先获取所有食堂（优先使用模拟数据）
+  let canteens = getMockCanteens();
+  
+  if (hasSupabaseConfig) {
+    try {
+      const { data, error } = await supabase
+        .from("canteens")
+        .select("*");
 
-  if (error || !canteens) {
-    return [];
+      if (!error && data && data.length > 0) {
+        canteens = data;
+      }
+    } catch (error) {
+      console.error("从 Supabase 获取食堂数据失败:", error);
+    }
   }
 
   // 获取每个食堂的评分
@@ -1535,7 +1576,7 @@ export async function getCanteenRanking(): Promise<(Canteen & { rating: number }
       const rating = await getCanteenRating(canteen.id);
       return {
         ...canteen,
-        rating
+        rating: rating || 0
       };
     })
   );
