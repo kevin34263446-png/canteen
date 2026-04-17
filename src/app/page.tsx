@@ -101,20 +101,16 @@ export default function Home() {
       {showHeatmap && <CanteenHeatmap />}
       <AIAssistant isOpen={showAIAssistant} onClose={() => setShowAIAssistant(false)} />
       
-      <div className="fixed top-20 right-6 z-40 flex flex-col gap-2">
+      <div className={`fixed z-40 flex flex-col gap-2 ${showNutrition ? 'top-[calc(100vh-180px)] right-6' : 'top-20 right-6'}`}>
         <button
           onClick={() => setShowAIAssistant(true)}
-          className={`px-4 py-3 rounded-2xl backdrop-blur-xl border transition-all ${
+          className={`w-12 h-12 rounded-full transition-all flex items-center justify-center ${
             showAIAssistant
-              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg'
-              : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+              ? 'bg-[rgb(52,152,219)] text-white shadow-lg'
+              : 'bg-white/5 text-[rgb(52,152,219)] hover:bg-white/10'
           }`}
         >
-          <span className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" />
-            <span>AI助手</span>
-            {showAIAssistant && <span>✓</span>}
-          </span>
+          <span className="text-lg font-bold tracking-tight">AI</span>
         </button>
       </div>
 
