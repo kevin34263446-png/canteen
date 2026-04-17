@@ -21,10 +21,10 @@ interface FoodItem {
 }
 
 interface NutritionDashboardProps {
-  items: FoodItem[];
+  items?: FoodItem[];
 }
 
-const NutritionDashboard = ({ items }: NutritionDashboardProps) => {
+const NutritionDashboard = ({ items = [] }: NutritionDashboardProps) => {
   const { user } = useAuth();
   const [totalNutrition, setTotalNutrition] = useState({
     carbs: 0,
@@ -63,7 +63,7 @@ const NutritionDashboard = ({ items }: NutritionDashboardProps) => {
       { carbs: 0, protein: 0, fat: 0, fiber: 0, calories: 0 }
     );
     setTotalNutrition(totals);
-  }, [items]);
+  }, [items.length]);
 
   const getOption = () => {
     const maxValues = [goals.carbs, goals.protein, goals.fat, goals.fiber, goals.calories / 20];
@@ -228,7 +228,7 @@ const NutritionDashboard = ({ items }: NutritionDashboardProps) => {
             <div>
               <p className="text-xs text-gray-400">总战力指数</p>
               <motion.p
-                key={items.length}
+                key={totalNutrition.calories}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"

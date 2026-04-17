@@ -3,7 +3,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
@@ -16,6 +16,8 @@ interface CanteenDetailPageProps {
 }
 
 export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
+  // 解包params
+  const { id: canteenId } = use(params);
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
@@ -69,12 +71,12 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         }
 
         const [canteenData, reviewsData, ratingData, stallsData, dishesData, categoriesData] = await Promise.all([
-          getCanteenById(params.id),
-          getCanteenReviews(params.id),
-          getCanteenRating(params.id),
-          getCanteenStalls(params.id),
-          getCanteenDishes(params.id),
-          getDishCategories(params.id),
+          getCanteenById(canteenId),
+          getCanteenReviews(canteenId),
+          getCanteenRating(canteenId),
+          getCanteenStalls(canteenId),
+          getCanteenDishes(canteenId),
+          getDishCategories(canteenId),
         ]);
 
         if (!canteenData) {
@@ -90,7 +92,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
 
         // 检查是否已收藏
         if (userId) {
-          const favorited = await isFavorite(userId, params.id);
+          const favorited = await isFavorite(userId, canteenId);
           setIsFavorited(favorited);
         }
       } catch (error) {
@@ -101,13 +103,13 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     };
 
     fetchData();
-  }, [params.id, userId]);
+  }, [canteenId, userId]);
 
   const handleReviewSuccess = async () => {
     // 重新加载评价数据
     const [reviewsData, ratingData] = await Promise.all([
-      getCanteenReviews(params.id),
-      getCanteenRating(params.id),
+      getCanteenReviews(canteenId),
+      getCanteenRating(canteenId),
     ]);
 
     setReviews(reviewsData);
@@ -117,9 +119,9 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
 
   const refreshDishes = async () => {
     const [dishesData, categoriesData] = await Promise.all([
-      getCanteenDishes(params.id),
-      getDishCategories(params.id),
-    ]);
+        getCanteenDishes(canteenId),
+        getDishCategories(canteenId),
+      ]);
     setDishes(dishesData);
     setCategories(["全部", ...categoriesData]);
   };
@@ -145,13 +147,13 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
       if (dishForm.file) {
         imageUrl = await uploadDishImage({
           file: dishForm.file,
-          canteenId: params.id,
+          canteenId: canteenId,
           stallId: dishForm.stall_id,
         });
       }
 
       await createDish({
-        canteen_id: params.id,
+        canteen_id: canteenId,
         stall_id: dishForm.stall_id,
         name: dishForm.name.trim(),
         category: (dishForm.category.trim() || "未分类"),
@@ -184,7 +186,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
     
     if (stallId === activeStall) {
       // 取消选择档口，显示所有菜品
-      const allDishes = await getCanteenDishes(params.id);
+      const allDishes = await getCanteenDishes(canteenId);
       setDishes(allDishes);
     } else {
       // 选择档口，显示该档口的菜品
@@ -215,13 +217,13 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
 
     if (isFavorited) {
       // 取消收藏
-      const success = await removeFavorite(userId, params.id);
+      const success = await removeFavorite(userId, canteenId);
       if (success) {
         setIsFavorited(false);
       }
     } else {
       // 添加收藏
-      const success = await addFavorite(userId, params.id);
+      const success = await addFavorite(userId, canteenId);
       if (success) {
         setIsFavorited(true);
       }
@@ -246,9 +248,9 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
       if (result.success) {
         // 重新加载评价数据
         const [reviewsData, ratingData] = await Promise.all([
-          getCanteenReviews(params.id),
-          getCanteenRating(params.id),
-        ]);
+      getCanteenReviews(canteenId),
+      getCanteenRating(canteenId),
+    ]);
         setReviews(reviewsData);
         setAvgRating(ratingData);
       } else {
@@ -315,7 +317,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
 
           {/* 信息区域 */}
           <div className="p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{getCanteenDisplayName(params.id, canteen.name)}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{getCanteenDisplayName(canteenId, canteen.name)}</h1>
 
             <div className="flex flex-wrap gap-4 mb-6">
               {canteen.location && (
@@ -581,7 +583,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
               </button>
             </div>
             <ReviewForm
-              canteenId={params.id}
+              canteenId={canteenId}
               onSuccess={handleReviewSuccess}
             />
           </div>

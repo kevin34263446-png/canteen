@@ -7,7 +7,6 @@ import { getCanteens, getCanteenRating, getCanteenDisplayName } from "@/lib/supa
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
 import NebulaBackground from "@/components/NebulaBackground";
-import MyTray from "@/components/MyTray";
 import CanteenHeatmap from "@/components/CanteenHeatmap";
 import NutritionDashboard from "@/components/NutritionDashboard";
 import AIAssistant from "@/components/AIAssistant";
@@ -30,7 +29,6 @@ interface FoodItem {
 export default function Home() {
   const [canteenData, setCanteenData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [trayItems, setTrayItems] = useState<FoodItem[]>([]);
   const [showNutrition, setShowNutrition] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -54,17 +52,7 @@ export default function Home() {
     }
   };
 
-  const addToTray = (item: FoodItem) => {
-    setTrayItems(prev => [...prev, item]);
-  };
 
-  const removeFromTray = (id: string) => {
-    setTrayItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const clearTray = () => {
-    setTrayItems([]);
-  };
 
   useEffect(() => {
     fetchCanteenData();
@@ -78,13 +66,6 @@ export default function Home() {
     <main className="min-h-screen relative overflow-hidden">
       <NebulaBackground />
       <Navbar />
-      <MyTray 
-        items={trayItems} 
-        onAddItem={addToTray} 
-        onRemoveItem={removeFromTray} 
-        onClearTray={clearTray} 
-      />
-      
       <div className="fixed top-20 left-6 z-40 flex flex-col gap-2">
         <button
           onClick={() => setShowNutrition(!showNutrition)}
@@ -116,7 +97,7 @@ export default function Home() {
         </button>
       </div>
 
-      {showNutrition && <NutritionDashboard items={trayItems} />}
+      {showNutrition && <NutritionDashboard />}
       {showHeatmap && <CanteenHeatmap />}
       <AIAssistant isOpen={showAIAssistant} onClose={() => setShowAIAssistant(false)} />
       

@@ -680,8 +680,10 @@ export async function login(email: string, password: string, userType: string): 
     // 生成简单的 token
     const token = btoa(JSON.stringify({ userId: user.id }));
 
+    // 从用户对象中移除password属性
+    const { password: _, ...userWithoutPassword } = user;
     return {
-      user: { ...user, password: undefined },
+      user: userWithoutPassword,
       token,
       error: null,
     };
@@ -1724,7 +1726,7 @@ const mockUsers: User[] = [
     weight: 75,
     age: 35,
     gender: "male",
-    activity_level: "low",
+    activity_level: "sedentary",
     created_at: "2024-01-04T00:00:00Z",
     updated_at: "2024-01-04T00:00:00Z"
   }
