@@ -2642,11 +2642,14 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
 
 // 获取所有菜品（管理员）
 export async function getAllDishes(): Promise<(Dish & { tags?: string[] })[]> {
+  // 默认使用模拟数据，确保显示完整的菜品列表
+  const mockResult = mockDishes.map(dish => ({
+    ...dish,
+    tags: getDishTags(dish)
+  }));
+  
   if (!hasSupabaseConfig) {
-    return mockDishes.map(dish => ({
-      ...dish,
-      tags: getDishTags(dish)
-    }));
+    return mockResult;
   }
 
   try {
@@ -2657,30 +2660,34 @@ export async function getAllDishes(): Promise<(Dish & { tags?: string[] })[]> {
 
     if (error) {
       console.error("获取所有菜品失败:", error);
-      return mockDishes.map(dish => ({
-        ...dish,
-        tags: getDishTags(dish)
-      }));
+      return mockResult;
     }
 
     // 如果数据库中没有数据，返回模拟数据
     if (!data || data.length === 0) {
-      return mockDishes.map(dish => ({
-        ...dish,
-        tags: getDishTags(dish)
-      }));
+      return mockResult;
     }
 
-    return (data as Dish[]).map(dish => ({
+    // 合并模拟数据和Supabase数据，去除重复（根据菜品名称和食堂ID）
+    const supabaseDishes = (data as Dish[]).map(dish => ({
       ...dish,
       tags: getDishTags(dish)
     }));
+    
+    const mergedDishes = [...mockResult];
+    for (const supDish of supabaseDishes) {
+      const exists = mergedDishes.some(d => 
+        d.name === supDish.name && d.canteen_id === supDish.canteen_id
+      );
+      if (!exists) {
+        mergedDishes.push(supDish);
+      }
+    }
+    
+    return mergedDishes;
   } catch (err) {
     console.error("获取所有菜品出错:", err);
-    return mockDishes.map(dish => ({
-      ...dish,
-      tags: getDishTags(dish)
-    }));
+    return mockResult;
   }
 }
 
