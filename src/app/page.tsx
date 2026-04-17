@@ -101,12 +101,22 @@ export default function Home() {
       {showHeatmap && <CanteenHeatmap />}
       <AIAssistant isOpen={showAIAssistant} onClose={() => setShowAIAssistant(false)} />
       
-      <button
-        onClick={() => setShowAIAssistant(true)}
-        className="fixed bottom-8 right-8 z-[999] w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_25px_rgba(139,92,246,0.6)] hover:shadow-[0_0_40px_rgba(139,92,246,0.8)] hover:scale-110 transition-all flex items-center justify-center animate-pulse"
-      >
-        <Sparkles className="w-8 h-8" />
-      </button>
+      <div className="fixed top-20 right-6 z-40 flex flex-col gap-2">
+        <button
+          onClick={() => setShowAIAssistant(true)}
+          className={`px-4 py-3 rounded-2xl backdrop-blur-xl border transition-all ${
+            showAIAssistant
+              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-transparent shadow-lg'
+              : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            <span>AI助手</span>
+            {showAIAssistant && <span>✓</span>}
+          </span>
+        </button>
+      </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 rounded-[2rem] border border-white/15 bg-white/8 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] px-6 py-8">

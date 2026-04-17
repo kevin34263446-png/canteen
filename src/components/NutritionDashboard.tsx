@@ -154,11 +154,11 @@ const NutritionDashboard = ({ items = [] }: NutritionDashboardProps) => {
   ];
 
   return (
-    <div className="fixed top-20 right-6 z-40 w-80">
+    <div className="fixed top-20 right-6 z-40 w-80 max-h-[calc(100vh-120px)]">
       <motion.div
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
-        className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+        className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-y-auto max-h-[calc(100vh-120px)]"
       >
         <div className="p-4 border-b border-white/10">
           <h3 className="text-xl font-bold text-white flex items-center gap-2">

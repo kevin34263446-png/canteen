@@ -361,19 +361,66 @@ export type AuthResponse = {
   error: string | null;
 };
 
+// 模拟食堂数据
+function getMockCanteens(): Canteen[] {
+  return [
+    {
+      id: "canteen-1",
+      name: "第一食堂",
+      description: "提供各种美味的家常菜",
+      location: "校园东区",
+      image_url: null,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "canteen-2",
+      name: "第二食堂",
+      description: "特色川菜和湘菜",
+      location: "校园西区",
+      image_url: null,
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: "canteen-3",
+      name: "第三食堂",
+      description: "轻食和西餐",
+      location: "校园南区",
+      image_url: null,
+      created_at: new Date().toISOString(),
+    },
+  ];
+}
+
 // 获取所有食堂数据
 export async function getCanteens(): Promise<Canteen[]> {
-  const { data, error } = await supabase
-    .from("canteens")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("获取食堂数据失败:", error);
-    return [];
+  // 检查Supabase配置
+  if (!hasSupabaseConfig) {
+    console.warn("Supabase配置缺失，使用模拟数据");
+    return getMockCanteens();
   }
 
-  return data || [];
+  try {
+    const { data, error } = await supabase
+      .from("canteens")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("获取食堂数据失败:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      // 返回模拟数据作为降级方案
+      return getMockCanteens();
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("获取食堂数据时发生异常:", err);
+    return getMockCanteens();
+  }
 }
 
 // 获取单个食堂详情
