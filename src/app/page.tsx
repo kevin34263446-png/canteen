@@ -122,9 +122,9 @@ export default function Home() {
       
       <button
         onClick={() => setShowAIAssistant(true)}
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] transition-all flex items-center justify-center"
+        className="fixed bottom-8 right-8 z-[999] w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-[0_0_25px_rgba(139,92,246,0.6)] hover:shadow-[0_0_40px_rgba(139,92,246,0.8)] hover:scale-110 transition-all flex items-center justify-center animate-pulse"
       >
-        <Sparkles className="w-7 h-7" />
+        <Sparkles className="w-8 h-8" />
       </button>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
