@@ -1073,9 +1073,32 @@ export async function createReview(data: {
   user_name: string;
   is_anonymous: boolean;
 }): Promise<Review | null> {
+  let canteenUuid = data.canteen_id;
+  
+  // 如果 canteen_id 是 "canteen-1" 格式，需要查询 Supabase 中的 UUID
+  if (data.canteen_id.startsWith('canteen-')) {
+    try {
+      // 查询 Supabase 中的食堂，获取其真正的 UUID
+      const { data: canteenData, error: canteenError } = await supabase
+        .from("canteens")
+        .select("id")
+        .eq("name", getCanteenNameFromId(data.canteen_id))
+        .single();
+      
+      if (!canteenError && canteenData) {
+        canteenUuid = canteenData.id;
+      }
+    } catch (error) {
+      console.error("查询食堂UUID失败:", error);
+    }
+  }
+  
   const { data: newReview, error } = await supabase
     .from("reviews")
-    .insert(data)
+    .insert({
+      ...data,
+      canteen_id: canteenUuid
+    })
     .select()
     .single();
 
@@ -1085,6 +1108,16 @@ export async function createReview(data: {
   }
 
   return newReview;
+}
+
+function getCanteenNameFromId(canteenId: string): string {
+  const nameMap: Record<string, string> = {
+    "canteen-1": "学一·启航",
+    "canteen-2": "学二·银河",
+    "canteen-3": "学三·极光",
+    "canteen-4": "学四·繁星",
+  };
+  return nameMap[canteenId] || canteenId;
 }
 
 export async function uploadDishImage(params: {
@@ -2731,9 +2764,31 @@ export async function createDishReview(data: {
   user_name: string;
   is_anonymous: boolean;
 }): Promise<DishReview | null> {
+  let canteenUuid = data.canteen_id;
+  
+  // 如果 canteen_id 是 "canteen-1" 格式，需要查询 Supabase 中的 UUID
+  if (data.canteen_id.startsWith('canteen-')) {
+    try {
+      const { data: canteenData, error: canteenError } = await supabase
+        .from("canteens")
+        .select("id")
+        .eq("name", getCanteenNameFromId(data.canteen_id))
+        .single();
+      
+      if (!canteenError && canteenData) {
+        canteenUuid = canteenData.id;
+      }
+    } catch (error) {
+      console.error("查询食堂UUID失败:", error);
+    }
+  }
+  
   const { data: newReview, error } = await supabase
     .from("dish_reviews")
-    .insert(data)
+    .insert({
+      ...data,
+      canteen_id: canteenUuid
+    })
     .select()
     .single();
 
