@@ -2714,6 +2714,34 @@ export async function addDish(dish: Omit<Dish, "id" | "created_at">): Promise<{ 
   }
 }
 
+// 获取菜品排行榜（按评分排序）
+export async function getDishRanking(): Promise<(Dish & { rating: number; tags?: string[] })[]> {
+  const allDishes = await getAllDishes();
+  
+  if (!hasSupabaseConfig) {
+    const dishesWithRating = allDishes.map(dish => {
+      const hash = dish.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      return {
+        ...dish,
+        rating: parseFloat((3.5 + (hash % 15) / 10).toFixed(1))
+      };
+    });
+    return dishesWithRating.sort((a, b) => b.rating - a.rating);
+  }
+
+  const dishesWithRating = await Promise.all(
+    allDishes.map(async (dish) => {
+      const rating = await getDishRating(dish.id);
+      return {
+        ...dish,
+        rating: rating || 0
+      };
+    })
+  );
+
+  return dishesWithRating.sort((a, b) => b.rating - a.rating);
+}
+
 // 更新菜品
 export async function updateDish(dishId: string, updates: Partial<Omit<Dish, "id" | "created_at">>): Promise<{ success: boolean; error: string | null }> {
   try {
