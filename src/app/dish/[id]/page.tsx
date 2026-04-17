@@ -3,19 +3,20 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { getDishById, getCanteenById, getDishReviews, getDishRating, DishReview, deleteDishReview } from "@/lib/supabase";
 import DishReviewForm from "@/components/DishReviewForm";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
 
 interface DishDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function DishDetailPage({ params }: DishDetailPageProps) {
+  const { id: dishId } = use(params);
   const [dish, setDish] = useState<any>(null);
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<DishReview[]>([]);
@@ -43,14 +44,14 @@ export default function DishDetailPage({ params }: DishDetailPageProps) {
           }
         }
 
-        const dishData = await getDishById(params.id);
-        if (!dishData) {
-          notFound();
-        }
+        const dishData = await getDishById(dishId);
+    if (!dishData) {
+      notFound();
+    }
 
-        const canteenData = await getCanteenById(dishData.canteen_id);
-        const reviewsData = await getDishReviews(params.id);
-        const ratingData = await getDishRating(params.id);
+    const canteenData = await getCanteenById(dishData.canteen_id);
+    const reviewsData = await getDishReviews(dishId);
+    const ratingData = await getDishRating(dishId);
 
         setDish(dishData);
         setCanteen(canteenData);
@@ -64,12 +65,12 @@ export default function DishDetailPage({ params }: DishDetailPageProps) {
     };
 
     fetchData();
-  }, [params.id]);
+  }, [dishId]);
 
   const handleReviewSuccess = async () => {
     const [reviewsData, ratingData] = await Promise.all([
-      getDishReviews(params.id),
-      getDishRating(params.id),
+      getDishReviews(dishId),
+      getDishRating(dishId),
     ]);
 
     setReviews(reviewsData);
@@ -92,8 +93,8 @@ export default function DishDetailPage({ params }: DishDetailPageProps) {
       const result = await deleteDishReview(reviewId);
       if (result.success) {
         const [reviewsData, ratingData] = await Promise.all([
-          getDishReviews(params.id),
-          getDishRating(params.id),
+          getDishReviews(dishId),
+          getDishRating(dishId),
         ]);
         setReviews(reviewsData);
         setAvgRating(ratingData);
@@ -267,7 +268,7 @@ export default function DishDetailPage({ params }: DishDetailPageProps) {
               </button>
             </div>
             <DishReviewForm
-              dishId={params.id}
+              dishId={dishId}
               canteenId={dish.canteen_id}
               onSuccess={handleReviewSuccess}
             />
