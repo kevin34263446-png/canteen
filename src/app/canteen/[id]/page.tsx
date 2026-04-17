@@ -3,7 +3,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
 import { getAIFoodRecommendation } from "@/lib/ai";
 import ReviewForm from "@/components/ReviewForm";
@@ -12,14 +12,14 @@ import StarRating from "@/components/StarRating";
 import FoodTray from "@/components/FoodTray";
 
 interface CanteenDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
-  // 直接从params中获取id
-  const { id: canteenId } = params;
+  // 使用 use() 来解包 Promise
+  const { id: canteenId } = use(params);
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);

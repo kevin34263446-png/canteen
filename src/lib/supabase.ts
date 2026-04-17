@@ -238,8 +238,11 @@ function getMockStallsForCanteen(canteenId: string): Stall[] {
   const exact = mockStalls.filter((stall) => stall.canteen_id === canteenId);
   if (exact.length > 0) return exact;
   
+  // 标准化 canteenId 格式
+  const normalizedCanteenId = canteenId.startsWith('canteen-') ? canteenId : `canteen-${canteenId}`;
+  
   // 根据食堂ID返回对应的档口
-  switch (canteenId) {
+  switch (normalizedCanteenId) {
     case "canteen-1": // 学一·启航
       return [
         {
@@ -357,10 +360,13 @@ function getMockDishesForCanteen(canteenId: string, stallIdMap: Map<string, stri
   const exact = mockDishes.filter((dish) => dish.canteen_id === canteenId);
   if (exact.length > 0) return exact;
 
+  // 处理不同格式的食堂ID
+  const normalizedCanteenId = canteenId.startsWith('canteen-') ? canteenId : `canteen-${canteenId}`;
+
   // 根据食堂ID返回对应的菜品
   let dishes: Dish[] = [];
   
-  switch (canteenId) {
+  switch (normalizedCanteenId) {
     case "canteen-1": // 学一·启航
       dishes = [
         // 大众快餐
@@ -910,19 +916,49 @@ export async function getCanteens(): Promise<Canteen[]> {
 
 // 获取单个食堂详情
 export async function getCanteenById(id: string): Promise<Canteen | null> {
+  // 标准化 ID 格式
+  const normalizedId = id.startsWith('canteen-') ? id : `canteen-${id}`;
+  
   // 从模拟数据中查找
   const mockCanteens = getMockCanteens();
-  const mockCanteen = mockCanteens.find(c => c.id === id);
+  const mockCanteen = mockCanteens.find(c => c.id === normalizedId || c.id === id);
   if (mockCanteen) {
     return mockCanteen;
   }
   
-  // 即使 Supabase 配置存在，也优先使用模拟数据
-  // 如果模拟数据中没有，返回一个基于ID的默认食堂
+  // 如果 Supabase 配置存在，尝试从 Supabase 获取
+  if (hasSupabaseConfig) {
+    try {
+      const { data, error } = await supabase
+        .from("canteens")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!error && data) {
+        return data;
+      }
+    } catch (error) {
+      console.error("从 Supabase 获取食堂数据失败:", error);
+    }
+  }
+  
+  // 如果都获取不到，返回基于ID的默认食堂
+  const nameMap: Record<string, string> = {
+    "canteen-1": "学一·启航",
+    "canteen-2": "学二·银河",
+    "canteen-3": "学三·极光",
+    "canteen-4": "学四·繁星",
+    "1": "学一·启航",
+    "2": "学二·银河",
+    "3": "学三·极光",
+    "4": "学四·繁星",
+  };
+  
   return {
-    id: id,
-    name: `食堂 ${id}`,
-    description: `这是一个默认的食堂描述，ID为 ${id}`,
+    id: normalizedId,
+    name: nameMap[normalizedId] || nameMap[id] || `食堂 ${id}`,
+    description: `食堂 ${id} 的描述`,
     location: "校园内",
     image_url: null,
     created_at: new Date().toISOString(),
@@ -1913,7 +1949,26 @@ const mockDishes: Dish[] = [
 
 // 获取食堂的档口列表
 export async function getCanteenStalls(canteenId: string): Promise<(Stall & { waitTime?: number })[]> {
-  // 优先使用模拟数据
+  // 如果 Supabase 配置存在，优先从 Supabase 获取数据
+  if (hasSupabaseConfig) {
+    try {
+      const { data, error } = await supabase
+        .from("stalls")
+        .select("*")
+        .eq("canteen_id", canteenId);
+
+      if (!error && data && data.length > 0) {
+        return data.map((stall: any) => ({
+          ...stall,
+          waitTime: getEstimatedWaitTime(stall.id)
+        }));
+      }
+    } catch (error) {
+      console.error("从 Supabase 获取档口数据失败:", error);
+    }
+  }
+
+  // 如果 Supabase 没有数据或不可用，使用模拟数据
   const stalls = getMockStallsForCanteen(canteenId);
   // 为每个档口添加模拟的等待时间
   return stalls.map(stall => ({
@@ -2093,8 +2148,34 @@ export async function getStallDishes(stallId: string): Promise<Dish[]> {
 
 // 获取食堂的菜品列表
 export async function getCanteenDishes(canteenId: string): Promise<(Dish & { tags?: string[] })[]> {
-  // 优先使用模拟数据
-  const dishes = getMockDishesForCanteen(canteenId, new Map());
+  // 优先从 Supabase 获取数据（用户之前保存的数据）
+  if (hasSupabaseConfig) {
+    try {
+      const { data, error } = await supabase
+        .from("dishes")
+        .select("*")
+        .eq("canteen_id", canteenId);
+
+      if (!error && data && data.length > 0) {
+        return data.map((dish: any) => ({
+          ...dish,
+          tags: getDishTags(dish)
+        }));
+      }
+    } catch (error) {
+      console.error("从 Supabase 获取菜品数据失败:", error);
+    }
+  }
+
+  // 如果 Supabase 没有数据或不可用，使用本地模拟数据
+  let dishes = getMockDishesForCanteen(canteenId, new Map());
+  
+  // 如果没有找到菜品，生成默认菜品
+  if (dishes.length === 0) {
+    const generated = getGeneratedMockDishesForCanteen(canteenId);
+    dishes = generated;
+  }
+  
   return dishes.map(dish => ({
     ...dish,
     tags: getDishTags(dish)
