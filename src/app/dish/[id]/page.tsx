@@ -1,22 +1,17 @@
 "use client";
 
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getDishById, getCanteenById, getDishReviews, getDishRating, DishReview, deleteDishReview } from "@/lib/supabase";
 import DishReviewForm from "@/components/DishReviewForm";
 import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
 
-interface DishDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default function DishDetailPage({ params }: DishDetailPageProps) {
-  const { id: dishId } = use(params);
+export default function DishDetailPage() {
+  const params = useParams();
+  const dishId = params.id as string;
   const [dish, setDish] = useState<any>(null);
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<DishReview[]>([]);
