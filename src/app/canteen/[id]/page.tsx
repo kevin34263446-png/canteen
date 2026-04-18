@@ -19,7 +19,7 @@ interface CanteenDetailPageProps {
 
 export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
   // 使用 use() 来解包 Promise
-  const { id: canteenId } = use(params);
+  const { id: canteenId } = params;
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
