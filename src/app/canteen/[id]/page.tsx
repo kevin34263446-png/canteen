@@ -1,9 +1,9 @@
 "use client";
 
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
 import { getAIFoodRecommendation } from "@/lib/ai";
 import ReviewForm from "@/components/ReviewForm";
@@ -11,15 +11,10 @@ import Navbar from "@/components/Navbar";
 import StarRating from "@/components/StarRating";
 import FoodTray from "@/components/FoodTray";
 
-interface CanteenDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
-  // 使用 use() 来解包 Promise
-  const { id: canteenId } = params;
+export default function CanteenDetailPage() {
+  // 在 Client Component 中使用 useParams() 来获取路由参数
+  const params = useParams();
+  const canteenId = params.id as string;
   const [canteen, setCanteen] = useState<any>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
