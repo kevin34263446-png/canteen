@@ -912,15 +912,29 @@ export async function getCanteens(): Promise<Canteen[]> {
   // 优先从 Supabase 获取数据
   if (hasSupabaseConfig) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const { data, error } = await supabase
         .from("canteens")
-        .select("*");
+        .select("*")
+        .abortSignal(controller.signal);
+
+      clearTimeout(timeoutId);
 
       if (!error && data && data.length > 0) {
         return data;
       }
-    } catch (error) {
-      console.error("从 Supabase 获取食堂数据失败:", error);
+      
+      if (error) {
+        console.error("从 Supabase 获取食堂数据失败:", error.message);
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.error("从 Supabase 获取食堂数据超时，使用模拟数据");
+      } else {
+        console.error("从 Supabase 获取食堂数据失败:", error.message);
+      }
     }
   }
   

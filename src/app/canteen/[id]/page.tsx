@@ -516,12 +516,14 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                 </span>
               )}
             </h2>
-            <button
-              onClick={() => setShowDishForm(true)}
-              className="shrink-0 rounded-full bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow-[0_10px_24px_rgba(217,119,6,0.24)] hover:bg-amber-700 transition-colors"
-            >
-              + 新增菜品
-            </button>
+            {user && user.is_admin && (
+              <button
+                onClick={() => setShowDishForm(true)}
+                className="shrink-0 rounded-full bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow-[0_10px_24px_rgba(217,119,6,0.24)] hover:bg-amber-700 transition-colors"
+              >
+                + 新增菜品
+              </button>
+            )}
           </div>
 
           {/* 搜索框 */}
