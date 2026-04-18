@@ -508,10 +508,10 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         {/* 菜品区域 */}
         <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] p-8 mb-8">
           <div className="flex items-start justify-between gap-4 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-white">
               菜品列表
               {activeStall && (
-                <span className="text-sm font-normal text-gray-500 ml-2">
+                <span className="text-sm font-normal text-gray-300 ml-2">
                   (来自: {stalls.find(s => s.id === activeStall)?.name})
                 </span>
               )}
@@ -631,7 +631,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
         {/* 评价区域 */}
         <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">用户评价</h2>
+            <h2 className="text-xl font-bold text-white">用户评价</h2>
             <button
               onClick={() => setShowReviewForm(true)}
               className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
@@ -654,7 +654,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                       <span className="text-gray-500">{review.is_anonymous ? '匿' : review.user_name.charAt(0)}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{review.is_anonymous ? '匿名用户' : review.user_name}</p>
+                      <p className="font-semibold text-white">{review.is_anonymous ? '匿名用户' : review.user_name}</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
@@ -686,7 +686,7 @@ export default function CanteenDetailPage({ params }: CanteenDetailPageProps) {
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-600 ml-13 pl-13">{review.content}</p>
+                  <p className="text-white ml-13 pl-13 font-medium">{review.content}</p>
                 </div>
               ))}
             </div>

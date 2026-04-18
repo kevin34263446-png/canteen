@@ -69,8 +69,8 @@ export default function ReviewsPage() {
 
     setDeletingReviewId(reviewId);
     try {
-        const result = await deleteReview(reviewId);
-        if (result.success) {
+      const result = await deleteReview(reviewId);
+      if (result.success) {
         // 从列表中移除删除的评价
         setReviews(reviews.filter(review => review.id !== reviewId));
       } else {

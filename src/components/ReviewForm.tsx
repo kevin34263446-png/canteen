@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createReview } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { moderateForumContent } from "@/lib/ai";
 
 interface ReviewFormProps {
   canteenId: string;
@@ -21,7 +20,6 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
 
     if (!content) {
       setError("请填写评价内容");
@@ -37,14 +35,28 @@ export default function ReviewForm({ canteenId, onSuccess }: ReviewFormProps) {
     setError("");
 
     try {
-      // 先通过AI审核内容
-      const moderatedContent = await moderateForumContent(content);
+      // 验证用户内容，不允许AI修改
+      const trimmedContent = content.trim();
       
+      // 检查内容长度
+      if (trimmedContent.length < 5) {
+        setError("评价内容太短，请至少输入5个字符");
+        setLoading(false);
+        return;
+      }
+
+      if (trimmedContent.length > 1000) {
+        setError("评价内容过长，请控制在1000个字符以内");
+        setLoading(false);
+        return;
+      }
+
+      // 直接使用用户输入的原始内容，不经过AI修改
       const result = await createReview({
         canteen_id: canteenId,
         user_id: user.id,
         rating,
-        content: moderatedContent,
+        content: trimmedContent, // 使用用户原始内容，不经过任何AI处理
         user_name: user?.name || "未登录用户",
         is_anonymous: isAnonymous,
       });
