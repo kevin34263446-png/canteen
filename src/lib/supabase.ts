@@ -216,541 +216,8 @@ function generateDishesForCanteen(canteenId: string, stalls: (Stall & { kind?: S
   return dishes;
 }
 
-function getGeneratedMockStallsForCanteen(canteenId: string): Stall[] {
-  const cached = mockCache.stallsByCanteen.get(canteenId);
-  if (cached) return cached;
-  const generated = generateStallsForCanteen(canteenId).map(({ kind, ...stall }) => stall);
-  mockCache.stallsByCanteen.set(canteenId, generated);
-  return generated;
-}
-
-function getGeneratedMockDishesForCanteen(canteenId: string): Dish[] {
-  const cached = mockCache.dishesByCanteen.get(canteenId);
-  if (cached) return cached;
-  const stallsWithKind = generateStallsForCanteen(canteenId);
-  const generated = generateDishesForCanteen(canteenId, stallsWithKind);
-  mockCache.stallsByCanteen.set(canteenId, stallsWithKind.map(({ kind, ...stall }) => stall));
-  mockCache.dishesByCanteen.set(canteenId, generated);
-  return generated;
-}
-
-function getMockStallsForCanteen(canteenId: string): Stall[] {
-  const exact = mockStalls.filter((stall) => stall.canteen_id === canteenId);
-  if (exact.length > 0) return exact;
-  
-  // 标准化 canteenId 格式
-  const normalizedCanteenId = canteenId.startsWith('canteen-') ? canteenId : `canteen-${canteenId}`;
-  
-  // 根据食堂ID返回对应的档口
-  switch (normalizedCanteenId) {
-    case "canteen-1": // 学一·启航
-      return [
-        {
-          id: "canteen-1__stall__1",
-          canteen_id: "canteen-1",
-          name: "大众快餐",
-          description: "提供经济实惠的快餐套餐",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-1__stall__2",
-          canteen_id: "canteen-1",
-          name: "包子/粥铺",
-          description: "提供各种包子和粥品",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-1__stall__3",
-          canteen_id: "canteen-1",
-          name: "精品小炒",
-          description: "提供现炒的精品菜肴",
-          image_url: null,
-          created_at: new Date().toISOString()
-        }
-      ];
-    case "canteen-2": // 学二·银河
-      return [
-        {
-          id: "canteen-2__stall__1",
-          canteen_id: "canteen-2",
-          name: "麻辣香锅/干锅",
-          description: "提供麻辣香锅和干锅系列",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-2__stall__2",
-          canteen_id: "canteen-2",
-          name: "西北面馆",
-          description: "提供各种面食",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-2__stall__3",
-          canteen_id: "canteen-2",
-          name: "地道淮扬",
-          description: "提供淮扬特色菜肴",
-          image_url: null,
-          created_at: new Date().toISOString()
-        }
-      ];
-    case "canteen-3": // 学三·极光
-      return [
-        {
-          id: "canteen-3__stall__1",
-          canteen_id: "canteen-3",
-          name: "黄焖鸡/石锅饭",
-          description: "提供黄焖鸡和石锅饭",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-3__stall__2",
-          canteen_id: "canteen-3",
-          name: "轻食沙拉",
-          description: "提供健康轻食和沙拉",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-3__stall__3",
-          canteen_id: "canteen-3",
-          name: "西式简餐",
-          description: "提供西式简餐",
-          image_url: null,
-          created_at: new Date().toISOString()
-        }
-      ];
-    case "canteen-4": // 学四·繁星
-      return [
-        {
-          id: "canteen-4__stall__1",
-          canteen_id: "canteen-4",
-          name: "螺蛳粉/酸辣粉",
-          description: "提供螺蛳粉和酸辣粉",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-4__stall__2",
-          canteen_id: "canteen-4",
-          name: "炸鸡烧烤",
-          description: "提供炸鸡和烧烤",
-          image_url: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-4__stall__3",
-          canteen_id: "canteen-4",
-          name: "奶茶甜品",
-          description: "提供奶茶和甜品",
-          image_url: null,
-          created_at: new Date().toISOString()
-        }
-      ];
-    default:
-      return getGeneratedMockStallsForCanteen(canteenId);
-  }
-}
-
 function getMockDishesForCanteen(canteenId: string, stallIdMap: Map<string, string>): Dish[] {
-  const exact = mockDishes.filter((dish) => dish.canteen_id === canteenId);
-  if (exact.length > 0) return exact;
-
-  // 处理不同格式的食堂ID
-  const normalizedCanteenId = canteenId.startsWith('canteen-') ? canteenId : `canteen-${canteenId}`;
-
-  // 根据食堂ID返回对应的菜品
-  let dishes: Dish[] = [];
-  
-  switch (normalizedCanteenId) {
-    case "canteen-1": // 学一·启航
-      dishes = [
-        // 大众快餐
-        {
-          id: "canteen-1__dish__1",
-          canteen_id: "canteen-1",
-          stall_id: "canteen-1__stall__1",
-          name: "宫保鸡丁套餐",
-          description: "经典宫保鸡丁配米饭",
-          price: 12.00,
-          image_url: null,
-          category: "快餐",
-          is_time_limited: false,
-          is_spicy: 2,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-1__dish__2",
-          canteen_id: "canteen-1",
-          stall_id: "canteen-1__stall__1",
-          name: "鱼香肉丝套餐",
-          description: "鱼香肉丝配米饭",
-          price: 11.00,
-          image_url: null,
-          category: "快餐",
-          is_time_limited: false,
-          is_spicy: 2,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        // 包子/粥铺
-        {
-          id: "canteen-1__dish__3",
-          canteen_id: "canteen-1",
-          stall_id: "canteen-1__stall__2",
-          name: "肉包子",
-          description: "鲜香多汁的肉包子",
-          price: 2.00,
-          image_url: null,
-          category: "早餐",
-          is_time_limited: true,
-          is_spicy: 0,
-          student_discount: 0.20,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-1__dish__4",
-          canteen_id: "canteen-1",
-          stall_id: "canteen-1__stall__2",
-          name: "小米粥",
-          description: "营养健康的小米粥",
-          price: 1.50,
-          image_url: null,
-          category: "早餐",
-          is_time_limited: true,
-          is_spicy: 0,
-          student_discount: 0.10,
-          created_at: new Date().toISOString()
-        },
-        // 精品小炒
-        {
-          id: "canteen-1__dish__5",
-          canteen_id: "canteen-1",
-          stall_id: "canteen-1__stall__3",
-          name: "红烧肉",
-          description: "肥而不腻的红烧肉",
-          price: 18.00,
-          image_url: null,
-          category: "小炒",
-          is_time_limited: false,
-          is_spicy: 1,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-1__dish__6",
-          canteen_id: "canteen-1",
-          stall_id: "canteen-1__stall__3",
-          name: "清蒸鱼",
-          description: "新鲜美味的清蒸鱼",
-          price: 22.00,
-          image_url: null,
-          category: "小炒",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        }
-      ];
-      break;
-    case "canteen-2": // 学二·银河
-      dishes = [
-        // 麻辣香锅/干锅
-        {
-          id: "canteen-2__dish__1",
-          canteen_id: "canteen-2",
-          stall_id: "canteen-2__stall__1",
-          name: "麻辣香锅",
-          description: "自选食材的麻辣香锅",
-          price: 15.00,
-          image_url: null,
-          category: "香锅",
-          is_time_limited: false,
-          is_spicy: 3,
-          student_discount: 1.50,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-2__dish__2",
-          canteen_id: "canteen-2",
-          stall_id: "canteen-2__stall__1",
-          name: "干锅排骨",
-          description: "香喷喷的干锅排骨",
-          price: 28.00,
-          image_url: null,
-          category: "干锅",
-          is_time_limited: false,
-          is_spicy: 2,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        },
-        // 西北面馆
-        {
-          id: "canteen-2__dish__3",
-          canteen_id: "canteen-2",
-          stall_id: "canteen-2__stall__2",
-          name: "兰州拉面",
-          description: "正宗兰州拉面",
-          price: 10.00,
-          image_url: null,
-          category: "面食",
-          is_time_limited: false,
-          is_spicy: 1,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-2__dish__4",
-          canteen_id: "canteen-2",
-          stall_id: "canteen-2__stall__2",
-          name: "刀削面",
-          description: "手工刀削面",
-          price: 12.00,
-          image_url: null,
-          category: "面食",
-          is_time_limited: false,
-          is_spicy: 1,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        // 地道淮扬
-        {
-          id: "canteen-2__dish__5",
-          canteen_id: "canteen-2",
-          stall_id: "canteen-2__stall__3",
-          name: "扬州炒饭",
-          description: "正宗扬州炒饭",
-          price: 15.00,
-          image_url: null,
-          category: "淮扬菜",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-2__dish__6",
-          canteen_id: "canteen-2",
-          stall_id: "canteen-2__stall__3",
-          name: "松鼠桂鱼",
-          description: "经典淮扬菜松鼠桂鱼",
-          price: 38.00,
-          image_url: null,
-          category: "淮扬菜",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 3.00,
-          created_at: new Date().toISOString()
-        }
-      ];
-      break;
-    case "canteen-3": // 学三·极光
-      dishes = [
-        // 黄焖鸡/石锅饭
-        {
-          id: "canteen-3__dish__1",
-          canteen_id: "canteen-3",
-          stall_id: "canteen-3__stall__1",
-          name: "黄焖鸡米饭",
-          description: "香喷喷的黄焖鸡米饭",
-          price: 16.00,
-          image_url: null,
-          category: "米饭",
-          is_time_limited: false,
-          is_spicy: 2,
-          student_discount: 1.50,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-3__dish__2",
-          canteen_id: "canteen-3",
-          stall_id: "canteen-3__stall__1",
-          name: "石锅拌饭",
-          description: "韩国风味石锅拌饭",
-          price: 18.00,
-          image_url: null,
-          category: "米饭",
-          is_time_limited: false,
-          is_spicy: 1,
-          student_discount: 1.50,
-          created_at: new Date().toISOString()
-        },
-        // 轻食沙拉
-        {
-          id: "canteen-3__dish__3",
-          canteen_id: "canteen-3",
-          stall_id: "canteen-3__stall__2",
-          name: "减脂沙拉",
-          description: "健康减脂沙拉",
-          price: 20.00,
-          image_url: null,
-          category: "轻食",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-3__dish__4",
-          canteen_id: "canteen-3",
-          stall_id: "canteen-3__stall__2",
-          name: "鸡胸肉沙拉",
-          description: "高蛋白鸡胸肉沙拉",
-          price: 22.00,
-          image_url: null,
-          category: "轻食",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        },
-        // 西式简餐
-        {
-          id: "canteen-3__dish__5",
-          canteen_id: "canteen-3",
-          stall_id: "canteen-3__stall__3",
-          name: "汉堡套餐",
-          description: "牛肉汉堡配薯条",
-          price: 25.00,
-          image_url: null,
-          category: "西餐",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-3__dish__6",
-          canteen_id: "canteen-3",
-          stall_id: "canteen-3__stall__3",
-          name: "意面",
-          description: "经典意大利面",
-          price: 22.00,
-          image_url: null,
-          category: "西餐",
-          is_time_limited: false,
-          is_spicy: 1,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        }
-      ];
-      break;
-    case "canteen-4": // 学四·繁星
-      dishes = [
-        // 螺蛳粉/酸辣粉
-        {
-          id: "canteen-4__dish__1",
-          canteen_id: "canteen-4",
-          stall_id: "canteen-4__stall__1",
-          name: "螺蛳粉",
-          description: "正宗柳州螺蛳粉",
-          price: 14.00,
-          image_url: null,
-          category: "粉面",
-          is_time_limited: false,
-          is_spicy: 3,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-4__dish__2",
-          canteen_id: "canteen-4",
-          stall_id: "canteen-4__stall__1",
-          name: "酸辣粉",
-          description: "酸辣可口的酸辣粉",
-          price: 12.00,
-          image_url: null,
-          category: "粉面",
-          is_time_limited: false,
-          is_spicy: 2,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        // 炸鸡烧烤
-        {
-          id: "canteen-4__dish__3",
-          canteen_id: "canteen-4",
-          stall_id: "canteen-4__stall__2",
-          name: "脆皮炸鸡",
-          description: "外酥里嫩的脆皮炸鸡",
-          price: 18.00,
-          image_url: null,
-          category: "小吃",
-          is_time_limited: false,
-          is_spicy: 1,
-          student_discount: 1.50,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-4__dish__4",
-          canteen_id: "canteen-4",
-          stall_id: "canteen-4__stall__2",
-          name: "烤串拼盘",
-          description: "各种烤串拼盘",
-          price: 25.00,
-          image_url: null,
-          category: "小吃",
-          is_time_limited: false,
-          is_spicy: 2,
-          student_discount: 2.00,
-          created_at: new Date().toISOString()
-        },
-        // 奶茶甜品
-        {
-          id: "canteen-4__dish__5",
-          canteen_id: "canteen-4",
-          stall_id: "canteen-4__stall__3",
-          name: "珍珠奶茶",
-          description: "经典珍珠奶茶",
-          price: 12.00,
-          image_url: null,
-          category: "饮品",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 1.00,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "canteen-4__dish__6",
-          canteen_id: "canteen-4",
-          stall_id: "canteen-4__stall__3",
-          name: "芒果布丁",
-          description: "香甜可口的芒果布丁",
-          price: 8.00,
-          image_url: null,
-          category: "甜品",
-          is_time_limited: false,
-          is_spicy: 0,
-          student_discount: 0.50,
-          created_at: new Date().toISOString()
-        }
-      ];
-      break;
-    default:
-      // 生成默认菜品
-      const generated = getGeneratedMockDishesForCanteen(canteenId);
-      dishes = generated.map(dish => ({
-        ...dish,
-        is_time_limited: false,
-        is_spicy: 0,
-        student_discount: 0
-      }));
-  }
-
-  // 为了兼容旧逻辑，如果传了映射仍然做一次替换
-  if (stallIdMap.size > 0) {
-    return dishes.map((dish) => ({
-      ...dish,
-      stall_id: stallIdMap.get(dish.stall_id) || dish.stall_id,
-    }));
-  }
-
-  return dishes;
+  return [];
 }
 
 // 食堂类型定义
@@ -1966,440 +1433,6 @@ export async function getCanteenRanking(): Promise<(Canteen & { rating: number }
   return canteensWithRating;
 }
 
-// 档口模拟数据
-const mockStalls: Stall[] = [
-  // 第一食堂档口
-  {
-    id: '1',
-    canteen_id: '1',
-    name: '川味炒菜',
-    description: '提供正宗川菜，口味麻辣鲜香。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    canteen_id: '1',
-    name: '主食窗口',
-    description: '提供各种主食，包括米饭、面条等。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '7',
-    canteen_id: '1',
-    name: '麻辣烫',
-    description: '自选菜品，麻辣鲜香，汤底多选。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  // 第二食堂档口
-  {
-    id: '3',
-    canteen_id: '2',
-    name: '面食档',
-    description: '提供各种面食，包括拉面、小面等。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '4',
-    canteen_id: '2',
-    name: '小吃档',
-    description: '提供各种传统小吃，包括煎饼果子、手抓饼等。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '8',
-    canteen_id: '2',
-    name: '烧腊饭',
-    description: '叉烧、烧鸭、脆皮鸡，搭配秘制酱汁。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  // 第三食堂档口
-  {
-    id: '5',
-    canteen_id: '3',
-    name: '套餐档',
-    description: '提供各种营养套餐，搭配合理。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '6',
-    canteen_id: '3',
-    name: '健康食品',
-    description: '提供健康沙拉、水果等。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '9',
-    canteen_id: '3',
-    name: '轻食西餐',
-    description: '意面、三明治、烤鸡胸，低脂高蛋白。',
-    image_url: null,
-    created_at: new Date().toISOString()
-  }
-];
-
-// 菜品模拟数据
-const mockDishes: Dish[] = [
-  // 第一食堂 - 川味炒菜档口
-  {
-    id: '1',
-    canteen_id: '1',
-    stall_id: '1',
-    name: '宫保鸡丁',
-    description: '经典川菜，鸡肉嫩滑，花生香脆，辣中带甜。',
-    price: 12.00,
-    image_url: null,
-    category: '炒菜',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '2',
-    canteen_id: '1',
-    stall_id: '1',
-    name: '鱼香肉丝',
-    description: '传统川菜，肉丝鲜嫩，木耳爽脆，酸甜可口。',
-    price: 10.00,
-    image_url: null,
-    category: '炒菜',
-    created_at: new Date().toISOString()
-  },
-  // 第一食堂 - 主食窗口
-  {
-    id: '3',
-    canteen_id: '1',
-    stall_id: '2',
-    name: '蛋炒饭',
-    description: '经典主食，米饭粒粒分明，鸡蛋香嫩。',
-    price: 8.00,
-    image_url: null,
-    category: '主食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '10',
-    canteen_id: '1',
-    stall_id: '2',
-    name: '扬州炒饭',
-    description: '传统名吃，配料丰富，口感多样。',
-    price: 10.00,
-    image_url: null,
-    category: '主食',
-    created_at: new Date().toISOString()
-  },
-  // 第二食堂 - 面食档
-  {
-    id: '4',
-    canteen_id: '2',
-    stall_id: '3',
-    name: '兰州拉面',
-    description: '手工拉面，汤头浓郁，牛肉香烂。',
-    price: 15.00,
-    image_url: null,
-    category: '面食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '5',
-    canteen_id: '2',
-    stall_id: '3',
-    name: '重庆小面',
-    description: '麻辣鲜香，面条劲道，配菜丰富。',
-    price: 12.00,
-    image_url: null,
-    category: '面食',
-    created_at: new Date().toISOString()
-  },
-  // 第二食堂 - 小吃档
-  {
-    id: '6',
-    canteen_id: '2',
-    stall_id: '4',
-    name: '煎饼果子',
-    description: '传统小吃，薄饼酥脆，配料丰富。',
-    price: 6.00,
-    image_url: null,
-    category: '小吃',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '11',
-    canteen_id: '2',
-    stall_id: '4',
-    name: '手抓饼',
-    description: '酥脆可口，可加各种配料。',
-    price: 5.00,
-    image_url: null,
-    category: '小吃',
-    created_at: new Date().toISOString()
-  },
-  // 第三食堂 - 套餐档
-  {
-    id: '7',
-    canteen_id: '3',
-    stall_id: '5',
-    name: '套餐A',
-    description: '一荤一素一汤，营养均衡。',
-    price: 15.00,
-    image_url: null,
-    category: '套餐',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '8',
-    canteen_id: '3',
-    stall_id: '5',
-    name: '套餐B',
-    description: '两荤一素一汤，量大实惠。',
-    price: 18.00,
-    image_url: null,
-    category: '套餐',
-    created_at: new Date().toISOString()
-  },
-  // 第三食堂 - 健康食品
-  {
-    id: '9',
-    canteen_id: '3',
-    stall_id: '6',
-    name: '水果沙拉',
-    description: '新鲜水果，健康营养。',
-    price: 10.00,
-    image_url: null,
-    category: '沙拉',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '12',
-    canteen_id: '3',
-    stall_id: '6',
-    name: '蔬菜沙拉',
-    description: '新鲜蔬菜，低脂健康。',
-    price: 8.00,
-    image_url: null,
-    category: '沙拉',
-    created_at: new Date().toISOString()
-  },
-
-  // 更多示例（作为模板：会被复制到任意食堂）
-  // 第一食堂 - 川味炒菜档口（stall_id: '1'）
-  {
-    id: '13',
-    canteen_id: '1',
-    stall_id: '1',
-    name: '麻婆豆腐',
-    description: '麻辣鲜香，豆腐嫩滑，下饭首选。',
-    price: 9.00,
-    image_url: null,
-    category: '炒菜',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '14',
-    canteen_id: '1',
-    stall_id: '1',
-    name: '回锅肉',
-    description: '肥而不腻，酱香浓郁，搭配青蒜更香。',
-    price: 14.00,
-    image_url: null,
-    category: '炒菜',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '15',
-    canteen_id: '1',
-    stall_id: '1',
-    name: '酸辣土豆丝',
-    description: '酸辣开胃，爽脆可口。',
-    price: 7.00,
-    image_url: null,
-    category: '素菜',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '16',
-    canteen_id: '1',
-    stall_id: '1',
-    name: '番茄鸡蛋汤',
-    description: '家常经典，酸甜清爽。',
-    price: 6.00,
-    image_url: null,
-    category: '汤品',
-    created_at: new Date().toISOString()
-  },
-
-  // 第一食堂 - 主食窗口（stall_id: '2'）
-  {
-    id: '17',
-    canteen_id: '1',
-    stall_id: '2',
-    name: '牛肉盖饭',
-    description: '牛肉量足，酱汁浓郁，配菜丰富。',
-    price: 16.00,
-    image_url: null,
-    category: '主食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '18',
-    canteen_id: '1',
-    stall_id: '2',
-    name: '番茄牛腩面',
-    description: '酸甜汤底，牛腩软烂，面条筋道。',
-    price: 18.00,
-    image_url: null,
-    category: '面食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '19',
-    canteen_id: '1',
-    stall_id: '2',
-    name: '鲜肉馄饨',
-    description: '皮薄馅大，汤鲜味美。',
-    price: 12.00,
-    image_url: null,
-    category: '面食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '20',
-    canteen_id: '1',
-    stall_id: '2',
-    name: '冰豆浆',
-    description: '清爽解腻，搭配早餐更合适。',
-    price: 4.00,
-    image_url: null,
-    category: '饮品',
-    created_at: new Date().toISOString()
-  },
-
-  // 第一食堂 - 麻辣烫（stall_id: '7'）
-  {
-    id: '21',
-    canteen_id: '1',
-    stall_id: '7',
-    name: '经典麻辣烫',
-    description: '经典红汤，麻辣鲜香，自选菜品称重。',
-    price: 15.00,
-    image_url: null,
-    category: '麻辣烫',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '22',
-    canteen_id: '1',
-    stall_id: '7',
-    name: '番茄麻辣烫',
-    description: '番茄汤底，酸甜开胃，适合不太能吃辣的人。',
-    price: 16.00,
-    image_url: null,
-    category: '麻辣烫',
-    created_at: new Date().toISOString()
-  },
-
-  // 第二食堂 - 面食档（stall_id: '3'）
-  {
-    id: '23',
-    canteen_id: '2',
-    stall_id: '3',
-    name: '牛肉刀削面',
-    description: '刀削面劲道，牛肉香烂，汤头浓郁。',
-    price: 18.00,
-    image_url: null,
-    category: '面食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '24',
-    canteen_id: '2',
-    stall_id: '3',
-    name: '酸汤肥牛面',
-    description: '酸汤开胃，肥牛滑嫩，配菜丰富。',
-    price: 20.00,
-    image_url: null,
-    category: '面食',
-    created_at: new Date().toISOString()
-  },
-
-  // 第二食堂 - 烧腊饭（stall_id: '8'）
-  {
-    id: '25',
-    canteen_id: '2',
-    stall_id: '8',
-    name: '叉烧饭',
-    description: '蜜汁叉烧，肥瘦相间，酱香浓郁。',
-    price: 22.00,
-    image_url: null,
-    category: '盖饭',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '26',
-    canteen_id: '2',
-    stall_id: '8',
-    name: '烧鸭饭',
-    description: '皮脆肉嫩，搭配烧腊汁更香。',
-    price: 24.00,
-    image_url: null,
-    category: '盖饭',
-    created_at: new Date().toISOString()
-  },
-
-  // 第三食堂 - 套餐档（stall_id: '5'）
-  {
-    id: '27',
-    canteen_id: '3',
-    stall_id: '5',
-    name: '鸡腿套餐',
-    description: '烤鸡腿+时蔬+米饭，能量满满。',
-    price: 21.00,
-    image_url: null,
-    category: '套餐',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '28',
-    canteen_id: '3',
-    stall_id: '5',
-    name: '低脂牛肉套餐',
-    description: '牛肉+西兰花+玉米，适合健身人群。',
-    price: 26.00,
-    image_url: null,
-    category: '套餐',
-    created_at: new Date().toISOString()
-  },
-
-  // 第三食堂 - 轻食西餐（stall_id: '9'）
-  {
-    id: '29',
-    canteen_id: '3',
-    stall_id: '9',
-    name: '鸡胸肉凯撒沙拉',
-    description: '鸡胸肉+生菜+帕玛森，饱腹不负担。',
-    price: 19.00,
-    image_url: null,
-    category: '轻食',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: '30',
-    canteen_id: '3',
-    stall_id: '9',
-    name: '黑胡椒牛肉意面',
-    description: '黑胡椒香气浓郁，意面弹牙。',
-    price: 28.00,
-    image_url: null,
-    category: '西餐',
-    created_at: new Date().toISOString()
-  }
-];
-
 // 获取食堂的档口列表
 export async function getCanteenStalls(canteenId: string): Promise<(Stall & { waitTime?: number })[]> {
   // 如果 Supabase 配置存在，优先从 Supabase 获取数据
@@ -2421,13 +1454,8 @@ export async function getCanteenStalls(canteenId: string): Promise<(Stall & { wa
     }
   }
 
-  // 如果 Supabase 没有数据或不可用，使用模拟数据
-  const stalls = getMockStallsForCanteen(canteenId);
-  // 为每个档口添加模拟的等待时间
-  return stalls.map(stall => ({
-    ...stall,
-    waitTime: getEstimatedWaitTime(stall.id)
-  }));
+  // 数据库没有数据时返回空数组
+  return [];
 }
 
 // 生成模拟的等待时间（分钟）
@@ -2550,12 +1578,7 @@ function getDishTags(dish: Dish): string[] {
 // 获取单个档口详情
 export async function getStallById(id: string): Promise<Stall | null> {
   if (!hasSupabaseConfig) {
-    const parsed = parseMockStallId(id);
-    if (parsed) {
-      const stalls = getMockStallsForCanteen(parsed.canteenId);
-      return stalls.find((s) => s.id === id) || null;
-    }
-    return mockStalls.find((stall) => stall.id === id) || null;
+    return null;
   }
 
   try {
@@ -2567,41 +1590,43 @@ export async function getStallById(id: string): Promise<Stall | null> {
 
     if (error) {
       console.error("获取档口详情失败:", error);
-      const parsed = parseMockStallId(id);
-      if (parsed) {
-        const stalls = getMockStallsForCanteen(parsed.canteenId);
-        return stalls.find((s) => s.id === id) || null;
-      }
-      return mockStalls.find((stall) => stall.id === id) || null;
+      return null;
     }
 
     return (data as Stall) || null;
   } catch (err) {
     console.error("获取档口详情出错:", err);
-    const parsed = parseMockStallId(id);
-    if (parsed) {
-      const stalls = getMockStallsForCanteen(parsed.canteenId);
-      return stalls.find((s) => s.id === id) || null;
-    }
-    return mockStalls.find((stall) => stall.id === id) || null;
+    return null;
   }
 }
 
 // 获取档口的菜品列表
 export async function getStallDishes(stallId: string): Promise<Dish[]> {
-  // 优先使用模拟数据
-  const parsed = parseMockStallId(stallId);
-  if (parsed) {
-    const canteenId = parsed.canteenId;
-    const allDishes = getMockDishesForCanteen(canteenId, new Map());
-    return allDishes.filter((d) => d.stall_id === stallId);
+  if (!hasSupabaseConfig) {
+    return [];
   }
-  return mockDishes.filter((dish) => dish.stall_id === stallId);
+
+  try {
+    const { data, error } = await supabase
+      .from("dishes")
+      .select("*")
+      .eq("stall_id", stallId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("获取档口菜品列表失败:", error);
+      return [];
+    }
+
+    return (data as Dish[]) || [];
+  } catch (err) {
+    console.error("获取档口菜品列表出错:", err);
+    return [];
+  }
 }
 
 // 获取食堂的菜品列表
 export async function getCanteenDishes(canteenId: string): Promise<(Dish & { tags?: string[] })[]> {
-  // 优先从 Supabase 获取数据（用户之前保存的数据）
   if (hasSupabaseConfig) {
     try {
       const { data, error } = await supabase
@@ -2620,49 +1645,42 @@ export async function getCanteenDishes(canteenId: string): Promise<(Dish & { tag
     }
   }
 
-  // 如果 Supabase 没有数据或不可用，使用本地模拟数据
-  let dishes = getMockDishesForCanteen(canteenId, new Map());
-  
-  // 如果没有找到菜品，生成默认菜品
-  if (dishes.length === 0) {
-    const generated = getGeneratedMockDishesForCanteen(canteenId);
-    dishes = generated;
-  }
-  
-  return dishes.map(dish => ({
-    ...dish,
-    tags: getDishTags(dish)
-  }));
+  // 数据库没有数据时返回空数组
+  return [];
 }
 
 // 获取单个菜品详情
 export async function getDishById(id: string): Promise<(Dish & { tags?: string[] }) | null> {
-  // 优先使用模拟数据
-  const sepIdx = id.lastIndexOf(MOCK_DISH_ID_SEP);
-  if (sepIdx > 0) {
-    const canteenId = id.slice(0, sepIdx);
-    // 使用 getMockDishesForCanteen 获取我们定义的菜品
-    const dishes = getMockDishesForCanteen(canteenId, new Map());
-    const dish = dishes.find((d) => d.id === id);
-    if (dish) {
-      return { ...dish, tags: getDishTags(dish) };
+  if (!hasSupabaseConfig) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("dishes")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("获取菜品详情失败:", error);
+      return null;
     }
+
+    if (data) {
+      return { ...(data as Dish), tags: getDishTags(data as Dish) };
+    }
+    return null;
+  } catch (err) {
+    console.error("获取菜品详情出错:", err);
+    return null;
   }
-  // 从 mockDishes 中查找
-  const dish = mockDishes.find((dish) => dish.id === id);
-  if (dish) {
-    return { ...dish, tags: getDishTags(dish) };
-  }
-  return null;
 }
 
 // 获取菜品分类列表
 export async function getDishCategories(canteenId: string): Promise<string[]> {
   if (!hasSupabaseConfig) {
-    const canteenDishes = mockDishes.filter((dish) => dish.canteen_id === canteenId);
-    if (canteenDishes.length > 0) return [...new Set(canteenDishes.map((dish) => dish.category))];
-    const generated = getGeneratedMockDishesForCanteen(canteenId);
-    return [...new Set(generated.map((dish) => dish.category))];
+    return [];
   }
 
   try {
@@ -2673,15 +1691,11 @@ export async function getDishCategories(canteenId: string): Promise<string[]> {
 
     if (error) {
       console.error("获取菜品分类失败:", error);
-      const canteenDishes = mockDishes.filter((dish) => dish.canteen_id === canteenId);
-      if (canteenDishes.length > 0) return [...new Set(canteenDishes.map((dish) => dish.category))];
-      const generated = getGeneratedMockDishesForCanteen(canteenId);
-      return [...new Set(generated.map((dish) => dish.category))];
+      return [];
     }
 
     if (!data || data.length === 0) {
-      const canteenDishes = getGeneratedMockDishesForCanteen(canteenId);
-      return [...new Set(canteenDishes.map((dish) => dish.category))];
+      return [];
     }
 
     const categories = (data || [])
@@ -2691,15 +1705,14 @@ export async function getDishCategories(canteenId: string): Promise<string[]> {
     return [...new Set(categories)];
   } catch (err) {
     console.error("获取菜品分类出错:", err);
-    const canteenDishes = mockDishes.filter((dish) => dish.canteen_id === canteenId);
-    return [...new Set(canteenDishes.map((dish) => dish.category))];
+    return [];
   }
 }
 
 // 按分类获取菜品
 export async function getDishesByCategory(canteenId: string, category: string): Promise<Dish[]> {
   if (!hasSupabaseConfig) {
-    return mockDishes.filter((dish) => dish.canteen_id === canteenId && dish.category === category);
+    return [];
   }
 
   try {
@@ -2712,13 +1725,13 @@ export async function getDishesByCategory(canteenId: string, category: string): 
 
     if (error) {
       console.error("按分类获取菜品失败:", error);
-      return mockDishes.filter((dish) => dish.canteen_id === canteenId && dish.category === category);
+      return [];
     }
 
     return (data as Dish[]) || [];
   } catch (err) {
     console.error("按分类获取菜品出错:", err);
-    return mockDishes.filter((dish) => dish.canteen_id === canteenId && dish.category === category);
+    return [];
   }
 }
 
@@ -3145,14 +2158,8 @@ export async function deleteUser(userId: string): Promise<{ success: boolean; er
 
 // 获取所有菜品（管理员）
 export async function getAllDishes(): Promise<(Dish & { tags?: string[] })[]> {
-  // 默认使用模拟数据，确保显示完整的菜品列表
-  const mockResult = mockDishes.map(dish => ({
-    ...dish,
-    tags: getDishTags(dish)
-  }));
-  
   if (!hasSupabaseConfig) {
-    return mockResult;
+    return [];
   }
 
   try {
@@ -3163,34 +2170,20 @@ export async function getAllDishes(): Promise<(Dish & { tags?: string[] })[]> {
 
     if (error) {
       console.error("获取所有菜品失败:", error);
-      return mockResult;
+      return [];
     }
 
-    // 如果数据库中没有数据，返回模拟数据
     if (!data || data.length === 0) {
-      return mockResult;
+      return [];
     }
 
-    // 合并模拟数据和Supabase数据，去除重复（根据菜品名称和食堂ID）
-    const supabaseDishes = (data as Dish[]).map(dish => ({
+    return (data as Dish[]).map(dish => ({
       ...dish,
       tags: getDishTags(dish)
     }));
-    
-    const mergedDishes = [...mockResult];
-    for (const supDish of supabaseDishes) {
-      const exists = mergedDishes.some(d => 
-        d.name === supDish.name && d.canteen_id === supDish.canteen_id
-      );
-      if (!exists) {
-        mergedDishes.push(supDish);
-      }
-    }
-    
-    return mergedDishes;
   } catch (err) {
     console.error("获取所有菜品出错:", err);
-    return mockResult;
+    return [];
   }
 }
 
