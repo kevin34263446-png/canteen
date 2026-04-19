@@ -2124,6 +2124,27 @@ export async function getDishReviews(dishId: string): Promise<DishReview[]> {
   return data || [];
 }
 
+// 获取用户的菜品评价列表
+export async function getUserDishReviews(userId: string): Promise<DishReview[]> {
+  const user = await getUserById(userId);
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("dish_reviews")
+    .select("*")
+    .eq("user_name", user.name)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("获取用户菜品评价历史失败:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
 // 提交菜品评价
 export async function createDishReview(data: {
   dish_id: string;
