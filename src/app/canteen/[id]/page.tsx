@@ -748,7 +748,7 @@ if (loading) {
                     >
                       <span>💬</span>
                       <span>回复</span>
-                      {review.replies?.length > 0 && <span className="ml-1">({review.replies.length})</span>}
+                      {review.replies && review.replies.length > 0 && <span className="ml-1">({review.replies.length})</span>}
                     </button>
                     
                     {/* 回复表单 */}

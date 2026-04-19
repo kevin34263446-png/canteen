@@ -2918,10 +2918,11 @@ export async function updateUserBasicInfo(
     }
   } catch (error) {
     console.error("💥 更新用户基本信息异常:", error);
-    console.error("异常类型:", error.constructor?.name);
-    console.error("异常消息:", error.message);
-    console.error("异常堆栈:", error.stack);
-    return { success: false, error: `系统异常: ${error.message || '未知错误'}` };
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    console.error("异常类型:", error instanceof Error ? error.constructor.name : 'Unknown');
+    console.error("异常消息:", errorMessage);
+    console.error("异常堆栈:", error instanceof Error ? error.stack : undefined);
+    return { success: false, error: `系统异常: ${errorMessage || '未知错误'}` };
   }
 }
 

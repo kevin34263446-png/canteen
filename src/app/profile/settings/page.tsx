@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import { User, getUserById, updateUserProfile, updateUserBasicInfo } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { forceUpdateUserInDatabase, readUserFromDatabaseDirectly } from "@/lib/db-verify";
-import { updateUserViaAPI, getUserViaAPI } from "@/lib/api-update";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Lock, Camera, User as UserIcon, Shield } from "lucide-react";
-import "@/lib/debug-tools";
 
 export default function SettingsPage() {
   const { updateUser } = useAuth();
@@ -127,98 +124,18 @@ export default function SettingsPage() {
         return;
       }
 
-      // 优先使用 API Route（通过 Service Role 绕过 RLS）
-      console.log('🌐 尝试通过 API Route 更新（绕过 RLS）...');
-      
-      let result;
-      let apiSuccess = false;
-      
-      // 方法1: 使用 API Route (Service Role)
-      try {
-        const apiResult = await updateUserViaAPI(decoded.userId, {
-          name: name.trim(),
-          avatar_url: avatarUrl?.trim() || undefined,
-          student_id: studentId?.trim() || undefined,
-        });
-        
-        if (apiResult.success) {
-          console.log('✅ API Route 更新成功！');
-          result = apiResult;
-          apiSuccess = true;
-          
-          // 通过 API 验证
-          const apiVerify = await getUserViaAPI(decoded.userId);
-          if (apiVerify.success && apiVerify.user) {
-            console.log('✅ API 验证成功:', apiVerify.user);
-            result.user = apiVerify.user;
-          }
-        } else {
-          console.warn('⚠️ API Route 失败，尝试直接数据库方法:', apiResult.error);
-        }
-      } catch (apiError) {
-        console.error('❌ API Route 异常:', apiError);
-      }
-      
-      // 方法2: 如果 API 失败，回退到直接数据库方法
-      if (!apiSuccess) {
-        console.log('🔧 回退到 forceUpdateUserInDatabase...');
-        
-        result = await forceUpdateUserInDatabase(decoded.userId, {
-          name: name.trim(),
-          avatar_url: avatarUrl?.trim() || undefined,
-          student_id: studentId?.trim() || undefined,
-        });
-      }
+      const result = await updateUserBasicInfo(decoded.userId, {
+        name: name.trim(),
+        avatar_url: avatarUrl?.trim() || undefined,
+        student_id: studentId?.trim() || undefined,
+      });
 
-      console.log('📊 最终更新结果:', result);
+      console.log('📊 更新结果:', result);
 
-      if (result.success) {
+      if (result.success && result.user) {
         setBasicSuccess('✅ 个人信息保存成功！');
         
-        // 立即从数据库读取最新数据以验证
-        console.log('🔍 立即从数据库验证更新结果...');
-        
-        const verifyResult = await readUserFromDatabaseDirectly(decoded.userId);
-        
-        let updatedUser: User;
-        
-        if (verifyResult.success && verifyResult.user) {
-          // 使用数据库验证后的数据（最可靠）
-          console.log('✅ 使用数据库验证后的数据:', verifyResult.user);
-          updatedUser = verifyResult.user;
-          
-          // 如果验证数据与输入不一致，使用输入的数据（因为我们的更新应该已经生效）
-          if (updatedUser.name !== name.trim() || 
-              updatedUser.student_id !== studentId?.trim()) {
-            console.warn('⚠️ 数据库数据与输入不一致，可能存在延迟，使用输入数据');
-            updatedUser = {
-              ...updatedUser,
-              name: name.trim(),
-              student_id: studentId?.trim() || updatedUser.student_id,
-              avatar_url: avatarUrl?.trim() || updatedUser.avatar_url,
-              updated_at: new Date().toISOString()
-            };
-          }
-        } else if (result.user && result.user.id) {
-          // 使用更新操作返回的数据
-          console.log('✅ 使用更新操作返回的数据:', result.user);
-          updatedUser = result.user;
-          updatedUser.name = name.trim();
-          updatedUser.student_id = studentId?.trim() || updatedUser.student_id;
-          if (avatarUrl?.trim()) {
-            updatedUser.avatar_url = avatarUrl.trim();
-          }
-        } else {
-          // 最后的 fallback：使用本地输入数据
-          console.log('⚠️ 无法获取数据库数据，使用本地输入数据');
-          updatedUser = { 
-            ...user, 
-            name: name.trim(),
-            avatar_url: avatarUrl?.trim() || user.avatar_url,
-            student_id: studentId?.trim() || user.student_id,
-            updated_at: new Date().toISOString()
-          };
-        }
+        let updatedUser: User = result.user;
         
         console.log('🎯 最终使用的用户数据:', updatedUser);
         
@@ -261,18 +178,19 @@ export default function SettingsPage() {
           updatedAt: updatedUser.updated_at
         });
         
-      } else {
+      } else if (result) {
         console.error('❌ 保存失败:', result.error);
         setBasicError(`保存失败: ${result.error || '未知错误'}`);
       }
     } catch (err) {
       console.error('💥 保存过程发生异常:', err);
+      const errorMessage = err instanceof Error ? err.message : '未知错误';
       console.error('异常详情:', {
-        message: err.message,
-        stack: err.stack,
-        name: err.name
+        message: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : undefined
       });
-      setBasicError(`系统异常: ${err.message || '保存失败，请重试'}`);
+      setBasicError(`系统异常: ${errorMessage || '保存失败，请重试'}`);
     } finally {
       setSavingBasic(false);
     }
