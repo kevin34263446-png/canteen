@@ -528,7 +528,7 @@ export default function AdminPage() {
                     placeholder="搜索用户..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 <div className="overflow-x-auto">
@@ -590,17 +590,17 @@ export default function AdminPage() {
                       <button
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                       >
                         上一页
                       </button>
-                      <span className="px-3 py-1">
+                      <span className="px-3 py-1 text-black">
                         第 {currentPage} / {totalPages(filteredUsers.length)} 页
                       </span>
                       <button
                         onClick={() => setCurrentPage(p => Math.min(totalPages(filteredUsers.length), p + 1))}
                         disabled={currentPage >= totalPages(filteredUsers.length)}
-                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                       >
                         下一页
                       </button>
@@ -618,7 +618,7 @@ export default function AdminPage() {
                     placeholder="搜索食堂评价..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                 </div>
                 {filteredReviews.length === 0 ? (
@@ -682,17 +682,17 @@ export default function AdminPage() {
                         <button
                           onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                           disabled={currentPage === 1}
-                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                         >
                           上一页
                         </button>
-                        <span className="px-3 py-1">
+                        <span className="px-3 py-1 text-black">
                           第 {currentPage} / {totalPages(filteredReviews.length)} 页
                         </span>
                         <button
                           onClick={() => setCurrentPage(p => Math.min(totalPages(filteredReviews.length), p + 1))}
                           disabled={currentPage >= totalPages(filteredReviews.length)}
-                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                         >
                           下一页
                         </button>
@@ -711,12 +711,12 @@ export default function AdminPage() {
                     placeholder="搜索菜品评价..."
                     value={dishSearchTerm}
                     onChange={(e) => setDishSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-black"
                   />
                   <select
                     value={selectedDishId}
                     onChange={(e) => setSelectedDishId(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   >
                     <option value="">全部菜品</option>
                     {dishes.map((dish) => (
@@ -796,17 +796,17 @@ export default function AdminPage() {
                         <button
                           onClick={() => setDishCurrentPage(p => Math.max(1, p - 1))}
                           disabled={dishCurrentPage === 1}
-                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                         >
                           上一页
                         </button>
-                        <span className="px-3 py-1">
+                        <span className="px-3 py-1 text-black">
                           第 {dishCurrentPage} / {totalPages(filteredDishReviews.length)} 页
                         </span>
                         <button
                           onClick={() => setDishCurrentPage(p => Math.min(totalPages(filteredDishReviews.length), p + 1))}
                           disabled={dishCurrentPage >= totalPages(filteredDishReviews.length)}
-                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                         >
                           下一页
                         </button>
@@ -825,7 +825,7 @@ export default function AdminPage() {
                     placeholder="搜索菜品..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   />
                   <button
                     onClick={openAddDishModal}
@@ -883,17 +883,17 @@ export default function AdminPage() {
                       <button
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                       >
                         上一页
                       </button>
-                      <span className="px-3 py-1">
+                      <span className="px-3 py-1 text-black">
                         第 {currentPage} / {totalPages(filteredDishes.length)} 页
                       </span>
                       <button
                         onClick={() => setCurrentPage(p => Math.min(totalPages(filteredDishes.length), p + 1))}
                         disabled={currentPage >= totalPages(filteredDishes.length)}
-                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50 text-black"
                       >
                         下一页
                       </button>
@@ -919,7 +919,7 @@ export default function AdminPage() {
                   type="text"
                   value={dishForm.name}
                   onChange={(e) => setDishForm({ ...dishForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 />
               </div>
               <div>
@@ -928,7 +928,7 @@ export default function AdminPage() {
                   type="text"
                   value={dishForm.category}
                   onChange={(e) => setDishForm({ ...dishForm, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 />
               </div>
               <div>
@@ -938,7 +938,7 @@ export default function AdminPage() {
                   step="0.01"
                   value={dishForm.price}
                   onChange={(e) => setDishForm({ ...dishForm, price: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 />
               </div>
               <div>
@@ -946,7 +946,7 @@ export default function AdminPage() {
                 <textarea
                   value={dishForm.description || ""}
                   onChange={(e) => setDishForm({ ...dishForm, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   rows={3}
                 />
               </div>
@@ -955,7 +955,7 @@ export default function AdminPage() {
                 <select
                   value={dishForm.canteen_id}
                   onChange={(e) => setDishForm({ ...dishForm, canteen_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 >
                   <option value="">选择食堂</option>
                   {canteens.map((canteen) => (
@@ -970,7 +970,7 @@ export default function AdminPage() {
                 <select
                   value={dishForm.stall_id}
                   onChange={(e) => setDishForm({ ...dishForm, stall_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   disabled={!dishForm.canteen_id}
                 >
                   <option value="">选择档口</option>
@@ -1009,7 +1009,7 @@ export default function AdminPage() {
             <textarea
               value={replyModal.reply}
               onChange={(e) => setReplyModal({ ...replyModal, reply: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               rows={4}
               placeholder="输入回复内容..."
             />
@@ -1044,7 +1044,7 @@ export default function AdminPage() {
               <textarea
                 value={dishReplyModal.reply}
                 onChange={(e) => setDishReplyModal({ ...dishReplyModal, reply: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                 rows={4}
                 placeholder="输入回复内容..."
               />
