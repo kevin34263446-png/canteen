@@ -4,7 +4,7 @@ import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, createReviewReply, getReviewReplies, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
+import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, createReviewReply, getReviewReplies, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish, getDishCategoriesByStall, getDishesByStallAndCategory } from "@/lib/supabase";
 import { getAIFoodRecommendation } from "@/lib/ai";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
@@ -30,7 +30,8 @@ export default function CanteenDetailPage() {
   const [submittingReply, setSubmittingReply] = useState<boolean>(false);
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [activeStall, setActiveStall] = useState<string | null>(null);
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [dishes, setDishes] = useState<(Dish & { tags?: string[] })[]>([]);
+  const [allCanteenCategories, setAllCanteenCategories] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("全部");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -109,7 +110,8 @@ export default function CanteenDetailPage() {
         setAvgRating(ratingData);
         setStalls(stallsData);
         setDishes(dishesData);
-        setCategories(['全部', ...categoriesData]);
+        setAllCanteenCategories(categoriesData);
+        setCategories(["全部", ...categoriesData]);
 
         // 检查是否已收藏
         if (userId) {
@@ -139,12 +141,24 @@ export default function CanteenDetailPage() {
   };
 
   const refreshDishes = async () => {
-    const [dishesData, categoriesData] = await Promise.all([
+    if (activeStall) {
+      // 如果有活动档口，刷新该档口的菜品
+      const [dishesData, categoriesData] = await Promise.all([
+        getStallDishes(activeStall),
+        getDishCategoriesByStall(activeStall)
+      ]);
+      setDishes(dishesData);
+      setCategories(["全部", ...categoriesData]);
+    } else {
+      // 否则刷新整个食堂的菜品
+      const [dishesData, categoriesData] = await Promise.all([
         getCanteenDishes(canteenId),
         getDishCategories(canteenId),
       ]);
-    setDishes(dishesData);
-    setCategories(["全部", ...categoriesData]);
+      setDishes(dishesData);
+      setAllCanteenCategories(categoriesData);
+      setCategories(["全部", ...categoriesData]);
+    }
   };
 
   const handleCreateDish = async () => {
@@ -271,16 +285,23 @@ export default function CanteenDetailPage() {
 
   // 处理档口选择时的菜品加载
   const handleStallSelect = async (stallId: string) => {
-    setActiveStall(stallId === activeStall ? null : stallId);
+    const newActiveStall = stallId === activeStall ? null : stallId;
+    setActiveStall(newActiveStall);
+    setActiveCategory("全部"); // 重置分类筛选
     
-    if (stallId === activeStall) {
+    if (newActiveStall === null) {
       // 取消选择档口，显示所有菜品
       const allDishes = await getCanteenDishes(canteenId);
       setDishes(allDishes);
+      setCategories(["全部", ...allCanteenCategories]);
     } else {
       // 选择档口，显示该档口的菜品
-      const stallDishes = await getStallDishes(stallId);
+      const [stallDishes, stallCategories] = await Promise.all([
+        getStallDishes(stallId),
+        getDishCategoriesByStall(stallId)
+      ]);
       setDishes(stallDishes);
+      setCategories(["全部", ...stallCategories]);
     }
   };
 

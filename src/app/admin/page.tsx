@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { User, Review, Dish, getAllUsers, setAdmin, adminResetPassword, deleteUser, getUserById, getCanteens, getCanteenStalls, getCanteenReviews, getAllDishes, addDish, updateDish, deleteDish, replyToReview, deleteReview } from "@/lib/supabase";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { User, Review, Dish, getAllUsers, setAdmin, adminResetPassword, deleteUser, getUserById, getCanteens, getCanteenStalls, getCanteenReviews, getAllDishes, addDish, updateDish, deleteDish, replyToReview, deleteReview, getDishReviews, deleteDishReview, DishReview, createDishReviewReply } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 
-type TabType = 'overview' | 'users' | 'reviews' | 'dishes';
+type TabType = 'overview' | 'users' | 'canteen-reviews' | 'dish-reviews' | 'dishes';
 
 interface DishFormData {
   name: string;
@@ -23,10 +23,17 @@ export default function AdminPage() {
   const [stalls, setStalls] = useState<any[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [dishReviews, setDishReviews] = useState<DishReview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [dishSearchTerm, setDishSearchTerm] = useState<string>('');
+  const [selectedDishId, setSelectedDishId] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [dishCurrentPage, setDishCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(10);
+  const [dishPage, setDishPage] = useState<number>(1);
   const [dishForm, setDishForm] = useState<DishFormData>({
     name: "",
     description: "",
@@ -40,6 +47,7 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      const startTime = performance.now();
       try {
         const token = localStorage.getItem('auth_token');
         if (!token) {
@@ -48,32 +56,45 @@ export default function AdminPage() {
         }
         const decoded = JSON.parse(atob(token));
         const userData = await getUserById(decoded.userId);
-        
+
         if (!userData || !userData.is_admin) {
           setError("无权限访问");
           return;
         }
-        
+
         setCurrentUser(userData);
-        const [usersData, canteensData, dishesData] = await Promise.all([
+
+        // 并行获取基础数据
+        const [usersData, canteensData, dishesData, reviewsData] = await Promise.all([
           getAllUsers(),
           getCanteens(),
-          getAllDishes()
+          getAllDishes(),
+          getCanteenReviews()
         ]);
-        
+
         setUsers(usersData);
         setCanteens(canteensData);
         setDishes(dishesData);
-        
-        const allStalls: any[] = [];
-        for (const canteen of canteensData) {
-          const canteenStalls = await getCanteenStalls(canteen.id);
-          allStalls.push(...canteenStalls);
-        }
-        setStalls(allStalls);
-        
-        const reviewsData = await getCanteenReviews();
         setReviews(reviewsData);
+
+        // 并行获取所有食堂的档口
+        const stallPromises = canteensData.map(canteen => getCanteenStalls(canteen.id));
+        const stallsResults = await Promise.all(stallPromises);
+        setStalls(stallsResults.flat());
+
+        // 并行获取所有菜品评价（限制并发数为5，避免请求过多）
+        const batchSize = 5;
+        const allDishReviews: DishReview[] = [];
+        for (let i = 0; i < dishesData.length; i += batchSize) {
+          const batch = dishesData.slice(i, i + batchSize);
+          const batchPromises = batch.map(dish => getDishReviews(dish.id));
+          const batchResults = await Promise.all(batchPromises);
+          allDishReviews.push(...batchResults.flat());
+        }
+        setDishReviews(allDishReviews);
+
+        const endTime = performance.now();
+        console.log(`数据加载耗时: ${(endTime - startTime).toFixed(2)}ms`);
       } catch (err) {
         console.error("获取数据失败:", err);
         setError("获取数据失败");
@@ -186,6 +207,58 @@ export default function AdminPage() {
     }
   };
 
+  const [dishReplyModal, setDishReplyModal] = useState<{ review: DishReview; reply: string } | null>(null);
+
+  const handleDishReplyReview = async () => {
+    if (!dishReplyModal || !dishReplyModal.reply.trim()) {
+      alert("请输入回复内容");
+      return;
+    }
+    
+    try {
+      const result = await createDishReviewReply({
+        dish_review_id: dishReplyModal.review.id,
+        user_id: currentUser?.id || "",
+        content: dishReplyModal.reply,
+        user_name: currentUser?.name || "管理员",
+        is_anonymous: false
+      });
+      if (result) {
+        setDishReviews(dishReviews.map(r => 
+          r.id === dishReplyModal.review.id 
+            ? { ...r, admin_reply: dishReplyModal.reply } 
+            : r
+        ));
+        setDishReplyModal(null);
+        alert("回复成功");
+      } else {
+        alert("回复失败");
+      }
+    } catch (err) {
+      console.error("回复菜品评价失败:", err);
+      alert("回复失败");
+    }
+  };
+
+  const handleDeleteDishReview = async (reviewId: string) => {
+    if (!confirm("确定要删除该菜品评价吗？")) {
+      return;
+    }
+    
+    try {
+      const result = await deleteDishReview(reviewId);
+      if (result.success) {
+        setDishReviews(dishReviews.filter(r => r.id !== reviewId));
+        alert("菜品评价删除成功");
+      } else {
+        alert(result.error || "菜品评价删除失败");
+      }
+    } catch (err) {
+      console.error("删除菜品评价失败:", err);
+      alert("删除菜品评价失败");
+    }
+  };
+
   const [showDishModal, setShowDishModal] = useState<boolean>(false);
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
 
@@ -285,20 +358,58 @@ export default function AdminPage() {
     }
   };
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    return users.filter(user =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
 
-  const filteredReviews = reviews.filter(review =>
-    review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    review.user_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
 
-  const filteredDishes = dishes.filter(dish =>
-    dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    dish.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredReviews = useMemo(() => {
+    return reviews.filter(review =>
+      review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      review.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [reviews, searchTerm]);
+
+  const paginatedReviews = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredReviews.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredReviews, currentPage, itemsPerPage]);
+
+  const filteredDishes = useMemo(() => {
+    return dishes.filter(dish =>
+      dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dish.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [dishes, searchTerm]);
+
+  const paginatedDishes = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDishes.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDishes, currentPage, itemsPerPage]);
+
+  const filteredDishReviews = useMemo(() => {
+    return dishReviews.filter(review => {
+      const matchesSearch = dishSearchTerm === "" ||
+        review.content.toLowerCase().includes(dishSearchTerm.toLowerCase()) ||
+        review.user_name.toLowerCase().includes(dishSearchTerm.toLowerCase());
+      const matchesDish = selectedDishId === "" || review.dish_id === selectedDishId;
+      return matchesSearch && matchesDish;
+    });
+  }, [dishReviews, dishSearchTerm, selectedDishId]);
+
+  const paginatedDishReviews = useMemo(() => {
+    const startIndex = (dishCurrentPage - 1) * itemsPerPage;
+    return filteredDishReviews.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDishReviews, dishCurrentPage, itemsPerPage]);
+
+  const totalPages = useCallback((total: number) => Math.ceil(total / itemsPerPage), [itemsPerPage]);
 
   if (loading) {
     return (
@@ -355,14 +466,24 @@ export default function AdminPage() {
                 用户管理
               </button>
               <button
-                onClick={() => setActiveTab('reviews')}
+                onClick={() => setActiveTab('canteen-reviews')}
                 className={`flex-1 py-4 px-6 text-center border-b-2 font-medium transition-colors ${
-                  activeTab === 'reviews'
+                  activeTab === 'canteen-reviews'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                评价管理
+                食堂评价
+              </button>
+              <button
+                onClick={() => setActiveTab('dish-reviews')}
+                className={`flex-1 py-4 px-6 text-center border-b-2 font-medium transition-colors ${
+                  activeTab === 'dish-reviews'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                菜品评价
               </button>
               <button
                 onClick={() => setActiveTab('dishes')}
@@ -379,14 +500,18 @@ export default function AdminPage() {
 
           <div className="p-6">
             {activeTab === 'overview' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-blue-50 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-blue-900 mb-2">总用户数</h3>
                   <p className="text-3xl font-bold text-blue-600">{users.length}</p>
                 </div>
                 <div className="bg-green-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-green-900 mb-2">总评价数</h3>
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">食堂评价数</h3>
                   <p className="text-3xl font-bold text-green-600">{reviews.length}</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-orange-900 mb-2">菜品评价数</h3>
+                  <p className="text-3xl font-bold text-orange-600">{dishReviews.length}</p>
                 </div>
                 <div className="bg-purple-50 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-purple-900 mb-2">总菜品数</h3>
@@ -417,7 +542,7 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredUsers.map((user) => (
+                      {paginatedUsers.map((user) => (
                         <tr key={user.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {user.name}
@@ -460,71 +585,235 @@ export default function AdminPage() {
                       ))}
                     </tbody>
                   </table>
+                  {filteredUsers.length > itemsPerPage && (
+                    <div className="flex justify-center mt-4 gap-2">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                      >
+                        上一页
+                      </button>
+                      <span className="px-3 py-1">
+                        第 {currentPage} / {totalPages(filteredUsers.length)} 页
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages(filteredUsers.length), p + 1))}
+                        disabled={currentPage >= totalPages(filteredUsers.length)}
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                      >
+                        下一页
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {activeTab === 'reviews' && (
+            {activeTab === 'canteen-reviews' && (
               <div>
                 <div className="mb-6">
                   <input
                     type="text"
-                    placeholder="搜索评价..."
+                    placeholder="搜索食堂评价..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div className="space-y-4">
-                  {filteredReviews.map((review) => (
-                    <div key={review.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-semibold text-gray-900">{review.user_name}</p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(review.created_at).toLocaleString('zh-CN')}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <span
-                              key={star}
-                              className={`${
-                                star <= review.rating
-                                  ? "text-yellow-400"
-                                  : "text-yellow-200"
-                              }`}
+                {filteredReviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">暂无食堂评价</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {paginatedReviews.map((review) => (
+                        <div key={review.id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="font-semibold text-gray-900">{review.user_name}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(review.created_at).toLocaleString('zh-CN')}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                  key={star}
+                                  className={`${
+                                    star <= review.rating
+                                      ? "text-yellow-400"
+                                      : "text-yellow-200"
+                                  }`}
+                                >
+                                  ★
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-gray-700 mb-2">{review.content}</p>
+                          {review.admin_reply && (
+                            <div className="bg-blue-50 rounded p-3 mb-2">
+                              <p className="text-sm text-blue-800">
+                                <strong>管理员回复：</strong>{review.admin_reply}
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setReplyModal({ review, reply: review.admin_reply || "" })}
+                              className="text-blue-600 hover:text-blue-900 text-sm"
                             >
-                              ★
-                            </span>
-                          ))}
+                              回复
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview(review.id)}
+                              className="text-red-600 hover:text-red-900 text-sm"
+                            >
+                              删除
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <p className="text-gray-700 mb-2">{review.content}</p>
-                      {review.admin_reply && (
-                        <div className="bg-blue-50 rounded p-3 mb-2">
-                          <p className="text-sm text-blue-800">
-                            <strong>管理员回复：</strong>{review.admin_reply}
-                          </p>
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setReplyModal({ review, reply: review.admin_reply || "" })}
-                          className="text-blue-600 hover:text-blue-900 text-sm"
-                        >
-                          回复
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReview(review.id)}
-                          className="text-red-600 hover:text-red-900 text-sm"
-                        >
-                          删除
-                        </button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                    {filteredReviews.length > itemsPerPage && (
+                      <div className="flex justify-center mt-4 gap-2">
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        >
+                          上一页
+                        </button>
+                        <span className="px-3 py-1">
+                          第 {currentPage} / {totalPages(filteredReviews.length)} 页
+                        </span>
+                        <button
+                          onClick={() => setCurrentPage(p => Math.min(totalPages(filteredReviews.length), p + 1))}
+                          disabled={currentPage >= totalPages(filteredReviews.length)}
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        >
+                          下一页
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'dish-reviews' && (
+              <div>
+                <div className="mb-6">
+                  <input
+                    type="text"
+                    placeholder="搜索菜品评价..."
+                    value={dishSearchTerm}
+                    onChange={(e) => setDishSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                  />
+                  <select
+                    value={selectedDishId}
+                    onChange={(e) => setSelectedDishId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">全部菜品</option>
+                    {dishes.map((dish) => (
+                      <option key={dish.id} value={dish.id}>
+                        {dish.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+                {filteredDishReviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">暂无菜品评价</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {paginatedDishReviews.map((review) => {
+                        const dish = dishes.find(d => d.id === review.dish_id);
+                        const adminReply = review.replies && review.replies.length > 0
+                          ? review.replies[review.replies.length - 1]
+                          : null;
+                        return (
+                          <div key={review.id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <p className="font-semibold text-gray-900">
+                                  {review.user_name}
+                                  {dish && <span className="text-sm text-gray-500 ml-2">→ {dish.name}</span>}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(review.created_at).toLocaleString('zh-CN')}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <span
+                                    key={star}
+                                    className={`${
+                                      star <= review.rating
+                                        ? "text-yellow-400"
+                                        : "text-yellow-200"
+                                    }`}
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-gray-700 mb-2">{review.content}</p>
+                            {adminReply && (
+                              <div className="bg-blue-50 rounded p-3 mb-2">
+                                <p className="text-sm text-blue-800">
+                                  <strong>管理员回复：</strong>{adminReply.content}
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setDishReplyModal({ review, reply: adminReply?.content || "" })}
+                                className="text-blue-600 hover:text-blue-900 text-sm"
+                              >
+                                回复
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDishReview(review.id)}
+                                className="text-red-600 hover:text-red-900 text-sm"
+                              >
+                                删除
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {filteredDishReviews.length > itemsPerPage && (
+                      <div className="flex justify-center mt-4 gap-2">
+                        <button
+                          onClick={() => setDishCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={dishCurrentPage === 1}
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        >
+                          上一页
+                        </button>
+                        <span className="px-3 py-1">
+                          第 {dishCurrentPage} / {totalPages(filteredDishReviews.length)} 页
+                        </span>
+                        <button
+                          onClick={() => setDishCurrentPage(p => Math.min(totalPages(filteredDishReviews.length), p + 1))}
+                          disabled={dishCurrentPage >= totalPages(filteredDishReviews.length)}
+                          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                        >
+                          下一页
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
@@ -557,7 +846,7 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredDishes.map((dish) => (
+                      {paginatedDishes.map((dish) => (
                         <tr key={dish.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {dish.name}
@@ -589,6 +878,27 @@ export default function AdminPage() {
                       ))}
                     </tbody>
                   </table>
+                  {filteredDishes.length > itemsPerPage && (
+                    <div className="flex justify-center mt-4 gap-2">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                      >
+                        上一页
+                      </button>
+                      <span className="px-3 py-1">
+                        第 {currentPage} / {totalPages(filteredDishes.length)} 页
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages(filteredDishes.length), p + 1))}
+                        disabled={currentPage >= totalPages(filteredDishes.length)}
+                        className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+                      >
+                        下一页
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -712,6 +1022,42 @@ export default function AdminPage() {
               </button>
               <button
                 onClick={handleReplyReview}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                发送
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dishReplyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">回复菜品评价</h3>
+            <div className="mb-4">
+              <div className="bg-gray-50 rounded p-3 mb-3">
+                <p className="text-sm text-gray-600 mb-1">
+                  <strong>评价内容：</strong>{dishReplyModal.review.content}
+                </p>
+              </div>
+              <textarea
+                value={dishReplyModal.reply}
+                onChange={(e) => setDishReplyModal({ ...dishReplyModal, reply: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
+                placeholder="输入回复内容..."
+              />
+            </div>
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => setDishReplyModal(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDishReplyReview}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 发送
