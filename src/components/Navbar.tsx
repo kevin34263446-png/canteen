@@ -55,7 +55,15 @@ export default function Navbar() {
                   href="/profile"
                   className="flex items-center px-3 py-2 rounded-full text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 transition-all"
                 >
-                  <span className="inline mr-1">👤</span>
+                  {user.avatar_url ? (
+                    <img 
+                      src={user.avatar_url} 
+                      alt="头像" 
+                      className="w-6 h-6 rounded-full mr-1 object-cover"
+                    />
+                  ) : (
+                    <span className="inline mr-1">👤</span>
+                  )}
                   个人中心
                 </Link>
                 <span className="text-sm text-gray-300">

@@ -1,32 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, getUserById } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 import Navbar from "@/components/Navbar";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          const decoded = JSON.parse(atob(token));
-          const userData = await getUserById(decoded.userId);
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error("获取用户信息失败:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+    if (!authLoading) {
+      setLoading(false);
+    }
+  }, [authLoading]);
 
   if (loading) {
     return (
@@ -66,8 +52,16 @@ export default function ProfilePage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-4xl text-blue-500">👤</span>
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+              {user.avatar_url ? (
+                <img 
+                  src={user.avatar_url} 
+                  alt="头像" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-4xl text-blue-500">👤</span>
+              )}
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>

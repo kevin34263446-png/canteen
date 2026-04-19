@@ -4,7 +4,7 @@ import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
+import { getCanteenById, getCanteenReviews, getCanteenRating, Review, isFavorite, addFavorite, removeFavorite, deleteReview, createReviewReply, getReviewReplies, getCanteenStalls, Stall, getCanteenDishes, getDishCategories, Dish, getStallDishes, getCanteenDisplayName, uploadDishImage, createDish } from "@/lib/supabase";
 import { getAIFoodRecommendation } from "@/lib/ai";
 import ReviewForm from "@/components/ReviewForm";
 import Navbar from "@/components/Navbar";
@@ -24,6 +24,10 @@ export default function CanteenDetailPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+  const [replyingToReview, setReplyingToReview] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState<string>("");
+  const [replyAnonymous, setReplyAnonymous] = useState<boolean>(false);
+  const [submittingReply, setSubmittingReply] = useState<boolean>(false);
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [activeStall, setActiveStall] = useState<string | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -345,11 +349,62 @@ export default function CanteenDetailPage() {
       console.error('删除评价失败:', error);
       alert('删除评价失败，请重试');
     } finally {
-      setDeletingReviewId(null);
-    }
-  };
+    setDeletingReviewId(null);
+  }
+};
 
-  if (loading) {
+// 提交回复
+const handleSubmitReply = async (reviewId: string) => {
+  if (!user?.id) {
+    alert("请先登录");
+    return;
+  }
+
+  if (!replyContent.trim()) {
+    alert("请输入回复内容");
+    return;
+  }
+
+  setSubmittingReply(true);
+
+  try {
+    const result = await createReviewReply({
+      review_id: reviewId,
+      user_id: user.id,
+      content: replyContent.trim(),
+      user_name: user.name || "用户",
+      is_anonymous: replyAnonymous
+    });
+
+    if (result) {
+      // 更新评论的回复列表
+      setReviews(prevReviews => 
+        prevReviews.map(review => 
+          review.id === reviewId 
+            ? { 
+                ...review, 
+                replies: [...(review.replies || []), result] 
+              }
+            : review
+        )
+      );
+      
+      // 重置回复表单
+      setReplyContent("");
+      setReplyAnonymous(false);
+      setReplyingToReview(null);
+    } else {
+      alert("提交回复失败，请重试");
+    }
+  } catch (error) {
+    console.error("提交回复出错:", error);
+    alert("提交回复失败，请重试");
+  } finally {
+    setSubmittingReply(false);
+  }
+};
+
+if (loading) {
     return (
       <main className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
@@ -683,7 +738,70 @@ export default function CanteenDetailPage() {
                       )}
                     </div>
                   </div>
-                  <p className="text-white ml-13 pl-13 font-medium">{review.content}</p>
+                  <p className="text-white ml-13 pl-13 font-medium mb-2">{review.content}</p>
+                  
+                  {/* 回复按钮 */}
+                  <div className="ml-13 pl-13 mb-4">
+                    <button
+                      onClick={() => setReplyingToReview(review.id === replyingToReview ? null : review.id)}
+                      className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                    >
+                      <span>💬</span>
+                      <span>回复</span>
+                      {review.replies?.length > 0 && <span className="ml-1">({review.replies.length})</span>}
+                    </button>
+                    
+                    {/* 回复表单 */}
+                    {replyingToReview === review.id && user && (
+                      <div className="mt-3 bg-gray-800 rounded-lg p-4">
+                        <textarea
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          placeholder="写下你的回复..."
+                          className="w-full bg-gray-700 text-white rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows={3}
+                        />
+                        <div className="flex items-center justify-between mt-3">
+                          <label className="flex items-center gap-2 text-sm text-gray-400">
+                            <input
+                              type="checkbox"
+                              checked={replyAnonymous}
+                              onChange={(e) => setReplyAnonymous(e.target.checked)}
+                              className="rounded text-blue-500 focus:ring-blue-500"
+                            />
+                            匿名回复
+                          </label>
+                          <button
+                            onClick={() => handleSubmitReply(review.id)}
+                            disabled={submittingReply}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                          >
+                            {submittingReply ? '提交中...' : '提交回复'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 回复列表 */}
+                    {review.replies && review.replies.length > 0 && (
+                      <div className="mt-3 space-y-3 ml-6 border-l-2 border-gray-700 pl-4">
+                        {review.replies.map((reply) => (
+                          <div key={reply.id} className="bg-gray-800 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center">
+                                <span className="text-gray-300 text-xs">{reply.is_anonymous ? '匿' : reply.user_name.charAt(0)}</span>
+                              </div>
+                              <span className="text-sm font-medium text-gray-300">{reply.is_anonymous ? '匿名用户' : reply.user_name}</span>
+                              <span className="text-xs text-gray-500 ml-auto">
+                                {new Date(reply.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-300">{reply.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

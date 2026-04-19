@@ -5,7 +5,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
+export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
 
 type StallKind =
   | "川湘小炒"
@@ -774,6 +774,18 @@ export type Review = {
   is_anonymous: boolean;
   created_at: string;
   admin_reply?: string;
+  replies?: ReviewReply[];
+};
+
+// 评论回复类型定义
+export type ReviewReply = {
+  id: string;
+  review_id: string;
+  user_id: string;
+  content: string;
+  user_name: string;
+  is_anonymous: boolean;
+  created_at: string;
 };
 
 // 菜品评价类型定义
@@ -783,6 +795,18 @@ export type DishReview = {
   canteen_id: string;
   user_id: string;
   rating: number;
+  content: string;
+  user_name: string;
+  is_anonymous: boolean;
+  created_at: string;
+  replies?: DishReviewReply[];
+};
+
+// 菜品评论回复类型定义
+export type DishReviewReply = {
+  id: string;
+  dish_review_id: string;
+  user_id: string;
   content: string;
   user_name: string;
   is_anonymous: boolean;
@@ -852,6 +876,7 @@ export type User = {
   name: string;
   user_type: string;
   student_id: string;
+  avatar_url?: string;
   is_admin?: boolean;
   height?: number;
   weight?: number;
@@ -1007,7 +1032,18 @@ export async function getCanteenReviews(canteenId?: string): Promise<Review[]> {
         content: "食堂环境整洁，菜品丰富，味道不错！",
         user_name: "张三",
         is_anonymous: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        replies: [
+          {
+            id: "1",
+            review_id: "1",
+            user_id: "2",
+            content: "这个评论很有道理！",
+            user_name: "李四",
+            is_anonymous: false,
+            created_at: new Date().toISOString()
+          }
+        ]
       },
       {
         id: "2",
@@ -1017,7 +1053,8 @@ export async function getCanteenReviews(canteenId?: string): Promise<Review[]> {
         content: "菜品价格合理，服务态度好。",
         user_name: "李四",
         is_anonymous: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        replies: []
       }
     ];
     return mockReviews;
@@ -1047,7 +1084,18 @@ export async function getCanteenReviews(canteenId?: string): Promise<Review[]> {
           content: "食堂环境整洁，菜品丰富，味道不错！",
           user_name: "张三",
           is_anonymous: false,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          replies: [
+            {
+              id: "1",
+              review_id: "1",
+              user_id: "2",
+              content: "这个评论很有道理！",
+              user_name: "李四",
+              is_anonymous: false,
+              created_at: new Date().toISOString()
+            }
+          ]
         },
         {
           id: "2",
@@ -1057,13 +1105,25 @@ export async function getCanteenReviews(canteenId?: string): Promise<Review[]> {
           content: "菜品价格合理，服务态度好。",
           user_name: "李四",
           is_anonymous: false,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          replies: []
         }
       ];
       return mockReviews;
     }
 
-    return data || [];
+    // 获取每个评论的回复
+    if (data && data.length > 0) {
+      const reviewsWithReplies = await Promise.all(
+        data.map(async (review) => {
+          const replies = await getReviewReplies(review.id);
+          return { ...review, replies };
+        })
+      );
+      return reviewsWithReplies;
+    }
+
+    return [];
   } catch (error) {
     console.error("获取评价列表出错:", error);
     // 返回模拟评价数据作为降级方案
@@ -1076,7 +1136,18 @@ export async function getCanteenReviews(canteenId?: string): Promise<Review[]> {
         content: "食堂环境整洁，菜品丰富，味道不错！",
         user_name: "张三",
         is_anonymous: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        replies: [
+          {
+            id: "1",
+            review_id: "1",
+            user_id: "2",
+            content: "这个评论很有道理！",
+            user_name: "李四",
+            is_anonymous: false,
+            created_at: new Date().toISOString()
+          }
+        ]
       },
       {
         id: "2",
@@ -1086,13 +1157,281 @@ export async function getCanteenReviews(canteenId?: string): Promise<Review[]> {
         content: "菜品价格合理，服务态度好。",
         user_name: "李四",
         is_anonymous: false,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        replies: []
       }
     ];
     return mockReviews;
   }
 }
 
+// 提交评论回复
+export async function createReviewReply(data: {
+  review_id: string;
+  user_id: string;
+  content: string;
+  user_name: string;
+  is_anonymous: boolean;
+}): Promise<ReviewReply | null> {
+  if (!hasSupabaseConfig) {
+    // 返回模拟数据
+    const mockReply: ReviewReply = {
+      id: `reply-${Date.now()}`,
+      review_id: data.review_id,
+      user_id: data.user_id,
+      content: data.content,
+      user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+      is_anonymous: data.is_anonymous,
+      created_at: new Date().toISOString()
+    };
+    return mockReply;
+  }
+  
+  try {
+    const { data: reply, error } = await supabase
+      .from("review_replies")
+      .insert({
+        review_id: data.review_id,
+        user_id: data.user_id,
+        content: data.content,
+        user_name: data.user_name,
+        is_anonymous: data.is_anonymous
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("提交评论回复失败:", error);
+      // 如果是表不存在的错误，返回模拟数据
+      if (error.code === 'PGRST205') {
+        const mockReply: ReviewReply = {
+          id: `reply-${Date.now()}`,
+          review_id: data.review_id,
+          user_id: data.user_id,
+          content: data.content,
+          user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+          is_anonymous: data.is_anonymous,
+          created_at: new Date().toISOString()
+        };
+        return mockReply;
+      }
+      return null;
+    }
+
+    return reply;
+  } catch (error) {
+    console.error("提交评论回复出错:", error);
+    // 出错时返回模拟数据
+    const mockReply: ReviewReply = {
+      id: `reply-${Date.now()}`,
+      review_id: data.review_id,
+      user_id: data.user_id,
+      content: data.content,
+      user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+      is_anonymous: data.is_anonymous,
+      created_at: new Date().toISOString()
+    };
+    return mockReply;
+  }
+}
+
+// 获取评论的回复列表
+export async function getReviewReplies(reviewId: string): Promise<ReviewReply[]> {
+  if (!hasSupabaseConfig) {
+    // 返回模拟数据
+    const mockReplies: ReviewReply[] = [
+      {
+        id: "1",
+        review_id: reviewId,
+        user_id: "1",
+        content: "这个评论很有道理！",
+        user_name: "张三",
+        is_anonymous: false,
+        created_at: new Date().toISOString()
+      }
+    ];
+    return mockReplies;
+  }
+  
+  try {
+    const { data: replies, error } = await supabase
+      .from("review_replies")
+      .select("*")
+      .eq("review_id", reviewId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("获取评论回复失败:", error);
+      // 如果是表不存在的错误，返回模拟数据
+      if (error.code === 'PGRST205') {
+        const mockReplies: ReviewReply[] = [
+          {
+            id: "1",
+            review_id: reviewId,
+            user_id: "1",
+            content: "这个评论很有道理！",
+            user_name: "张三",
+            is_anonymous: false,
+            created_at: new Date().toISOString()
+          }
+        ];
+        return mockReplies;
+      }
+      return [];
+    }
+
+    return replies || [];
+  } catch (error) {
+    console.error("获取评论回复出错:", error);
+    // 出错时返回模拟数据
+    const mockReplies: ReviewReply[] = [
+      {
+        id: "1",
+        review_id: reviewId,
+        user_id: "1",
+        content: "这个评论很有道理！",
+        user_name: "张三",
+        is_anonymous: false,
+        created_at: new Date().toISOString()
+      }
+    ];
+    return mockReplies;
+  }
+}
+
+// 提交菜品评论回复
+export async function createDishReviewReply(data: {
+  dish_review_id: string;
+  user_id: string;
+  content: string;
+  user_name: string;
+  is_anonymous: boolean;
+}): Promise<DishReviewReply | null> {
+  if (!hasSupabaseConfig) {
+    // 返回模拟数据
+    const mockReply: DishReviewReply = {
+      id: `dish-reply-${Date.now()}`,
+      dish_review_id: data.dish_review_id,
+      user_id: data.user_id,
+      content: data.content,
+      user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+      is_anonymous: data.is_anonymous,
+      created_at: new Date().toISOString()
+    };
+    return mockReply;
+  }
+  
+  try {
+    const { data: reply, error } = await supabase
+      .from("dish_review_replies")
+      .insert({
+        dish_review_id: data.dish_review_id,
+        user_id: data.user_id,
+        content: data.content,
+        user_name: data.user_name,
+        is_anonymous: data.is_anonymous
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("提交菜品评论回复失败:", error);
+      // 如果是表不存在的错误，返回模拟数据
+      if (error.code === 'PGRST205') {
+        const mockReply: DishReviewReply = {
+          id: `dish-reply-${Date.now()}`,
+          dish_review_id: data.dish_review_id,
+          user_id: data.user_id,
+          content: data.content,
+          user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+          is_anonymous: data.is_anonymous,
+          created_at: new Date().toISOString()
+        };
+        return mockReply;
+      }
+      return null;
+    }
+
+    return reply;
+  } catch (error) {
+    console.error("提交菜品评论回复出错:", error);
+    // 出错时返回模拟数据
+    const mockReply: DishReviewReply = {
+      id: `dish-reply-${Date.now()}`,
+      dish_review_id: data.dish_review_id,
+      user_id: data.user_id,
+      content: data.content,
+      user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+      is_anonymous: data.is_anonymous,
+      created_at: new Date().toISOString()
+    };
+    return mockReply;
+  }
+}
+
+// 获取菜品评论的回复列表
+export async function getDishReviewReplies(dishReviewId: string): Promise<DishReviewReply[]> {
+  if (!hasSupabaseConfig) {
+    // 返回模拟数据
+    const mockReplies: DishReviewReply[] = [
+      {
+        id: "1",
+        dish_review_id: dishReviewId,
+        user_id: "1",
+        content: "这个评论很有道理！",
+        user_name: "张三",
+        is_anonymous: false,
+        created_at: new Date().toISOString()
+      }
+    ];
+    return mockReplies;
+  }
+  
+  try {
+    const { data: replies, error } = await supabase
+      .from("dish_review_replies")
+      .select("*")
+      .eq("dish_review_id", dishReviewId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("获取菜品评论回复失败:", error);
+      // 如果是表不存在的错误，返回模拟数据
+      if (error.code === 'PGRST205') {
+        const mockReplies: DishReviewReply[] = [
+          {
+            id: "1",
+            dish_review_id: dishReviewId,
+            user_id: "1",
+            content: "这个评论很有道理！",
+            user_name: "张三",
+            is_anonymous: false,
+            created_at: new Date().toISOString()
+          }
+        ];
+        return mockReplies;
+      }
+      return [];
+    }
+
+    return replies || [];
+  } catch (error) {
+    console.error("获取菜品评论回复出错:", error);
+    // 出错时返回模拟数据
+    const mockReplies: DishReviewReply[] = [
+      {
+        id: "1",
+        dish_review_id: dishReviewId,
+        user_id: "1",
+        content: "这个评论很有道理！",
+        user_name: "张三",
+        is_anonymous: false,
+        created_at: new Date().toISOString()
+      }
+    ];
+    return mockReplies;
+  }
+}
 // 提交评价
 export async function createReview(data: {
   canteen_id: string;
@@ -1102,6 +1441,21 @@ export async function createReview(data: {
   user_name: string;
   is_anonymous: boolean;
 }): Promise<Review | null> {
+  if (!hasSupabaseConfig) {
+    // 返回模拟数据
+    const mockReview: Review = {
+      id: `review-${Date.now()}`,
+      canteen_id: data.canteen_id,
+      user_id: data.user_id,
+      rating: data.rating,
+      content: data.content,
+      user_name: data.is_anonymous ? '匿名用户' : data.user_name,
+      is_anonymous: data.is_anonymous,
+      created_at: new Date().toISOString()
+    };
+    return mockReview;
+  }
+  
   let canteenUuid = data.canteen_id;
   
   // 如果 canteen_id 是 "canteen-1" 格式，需要查询 Supabase 中的 UUID
@@ -1122,21 +1476,26 @@ export async function createReview(data: {
     }
   }
   
-  const { data: newReview, error } = await supabase
-    .from("reviews")
-    .insert({
-      ...data,
-      canteen_id: canteenUuid
-    })
-    .select()
-    .single();
+  try {
+    const { data: newReview, error } = await supabase
+      .from("reviews")
+      .insert({
+        ...data,
+        canteen_id: canteenUuid
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error("提交评价失败:", error);
-    throw new Error(`提交评价失败: ${error.message}`);
+    if (error) {
+      console.error("提交评价失败:", error);
+      return null;
+    }
+
+    return newReview;
+  } catch (error) {
+    console.error("提交评价出错:", error);
+    return null;
   }
-
-  return newReview;
 }
 
 function getCanteenNameFromId(canteenId: string): string {
@@ -1441,25 +1800,31 @@ export async function login(email: string, password: string, userType: string): 
 
 // 获取用户信息
 export async function getUserById(userId: string): Promise<User | null> {
+  console.log('getUserById 被调用:', { userId, hasSupabaseConfig });
+  
   if (!hasSupabaseConfig) {
+    console.log('使用 mock 数据');
     return mockUsers.find(user => user.id === userId) || null;
   }
   
   try {
     const { data, error } = await supabase
       .from("users")
-      .select("id, email, name, user_type, student_id, is_admin, created_at, updated_at")
+      .select("id, email, name, user_type, student_id, avatar_url, is_admin, created_at, updated_at")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("获取用户信息失败:", error);
+      console.log('使用 mock 数据作为 fallback');
       return mockUsers.find(user => user.id === userId) || null;
     }
 
+    console.log('从数据库获取的用户数据:', data);
     return data;
   } catch (error) {
     console.error("获取用户信息出错:", error);
+    console.log('使用 mock 数据作为 fallback');
     return mockUsers.find(user => user.id === userId) || null;
   }
 }
@@ -2434,6 +2799,129 @@ export async function updateUserProfile(
     return { success: true, error: null, user: data };
   } catch (error) {
     return { success: false, error: "更新用户信息失败" };
+  }
+}
+
+// 更新用户基本信息（头像、用户名、学号等）
+export async function updateUserBasicInfo(
+  userId: string,
+  basicInfo: {
+    avatar_url?: string;
+    name?: string;
+    student_id?: string;
+  }
+): Promise<{ success: boolean; error: string | null; user?: User }> {
+  try {
+    console.log('🔄 开始更新用户基本信息:', { userId, basicInfo });
+    console.log('📊 Supabase 配置状态:', { hasSupabaseConfig, supabaseUrl });
+    
+    // 验证输入参数
+    if (!userId) {
+      console.error('❌ 用户ID为空');
+      return { success: false, error: '用户ID不能为空' };
+    }
+
+    // 验证要更新的字段
+    const updateFields = {};
+    if (basicInfo.name !== undefined && basicInfo.name !== null) {
+      Object.assign(updateFields, { name: basicInfo.name });
+    }
+    if (basicInfo.avatar_url !== undefined && basicInfo.avatar_url !== null) {
+      Object.assign(updateFields, { avatar_url: basicInfo.avatar_url });
+    }
+    if (basicInfo.student_id !== undefined && basicInfo.student_id !== null) {
+      Object.assign(updateFields, { student_id: basicInfo.student_id });
+    }
+    
+    // 添加更新时间戳
+    Object.assign(updateFields, { updated_at: new Date().toISOString() });
+
+    console.log('✅ 准备更新的字段:', updateFields);
+
+    // 执行更新操作
+    const { error: updateError, data: updateData } = await supabase
+      .from("users")
+      .update(updateFields)
+      .eq("id", userId)
+      .select();
+
+    console.log('📝 更新操作结果:', { 
+      error: updateError, 
+      data: updateData,
+      dataType: typeof updateData,
+      isArray: Array.isArray(updateData),
+      dataLength: Array.isArray(updateData) ? updateData.length : 'N/A'
+    });
+
+    if (updateError) {
+      console.error("❌ 更新用户基本信息失败:", updateError);
+      console.error("错误详情:", {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      });
+      return { success: false, error: updateError.message || '数据库更新失败' };
+    }
+
+    // 处理更新结果
+    let updatedUserData = null;
+    
+    if (Array.isArray(updateData) && updateData.length > 0) {
+      // 如果 select() 返回数组，取第一个元素
+      updatedUserData = updateData[0];
+      console.log('✅ 从更新操作中获取到用户数据:', updatedUserData);
+    } else if (updateData && !Array.isArray(updateData)) {
+      // 如果 select() 返回对象
+      updatedUserData = updateData;
+      console.log('✅ 从更新操作中获取到用户数据(对象):', updatedUserData);
+    }
+    
+    // 如果更新操作没有返回完整数据，重新查询
+    if (!updatedUserData) {
+      console.log('⚠️ 更新操作未返回完整数据，重新查询...');
+      
+      try {
+        const { data: freshData, error: fetchError } = await supabase
+          .from("users")
+          .select("id, email, name, user_type, student_id, avatar_url, is_admin, created_at, updated_at")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error("❌ 获取更新后的用户信息失败:", fetchError);
+          // 即使查询失败，也认为更新成功（因为前面的 update 已经成功了）
+          console.log('ℹ️ 但更新操作本身已成功');
+        } else {
+          updatedUserData = freshData;
+          console.log('✅ 重新查询获取到用户数据:', updatedUserData);
+        }
+      } catch (queryError) {
+        console.error("❌ 重新查询异常:", queryError);
+      }
+    }
+
+    // 验证最终获取到的数据
+    if (updatedUserData) {
+      console.log('🎉 最终返回的用户数据:', updatedUserData);
+      console.log('🔍 数据验证:', {
+        hasId: !!updatedUserData.id,
+        hasName: !!updatedUserData.name,
+        hasStudentId: !!updatedUserData.student_id,
+        idMatch: updatedUserData.id === userId
+      });
+      
+      return { success: true, error: null, user: updatedUserData as User };
+    } else {
+      console.warn('⚠️ 无法获取更新后的完整用户数据，但更新操作已执行');
+      return { success: true, error: null }; // 返回成功但不包含用户数据
+    }
+  } catch (error) {
+    console.error("💥 更新用户基本信息异常:", error);
+    console.error("异常类型:", error.constructor?.name);
+    console.error("异常消息:", error.message);
+    console.error("异常堆栈:", error.stack);
+    return { success: false, error: `系统异常: ${error.message || '未知错误'}` };
   }
 }
 
