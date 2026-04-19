@@ -40,13 +40,13 @@ export default function DishDetailPage() {
         }
 
         const dishData = await getDishById(dishId);
-    if (!dishData) {
-      notFound();
-    }
+        if (!dishData) {
+          notFound();
+        }
 
-    const canteenData = await getCanteenById(dishData.canteen_id);
-    const reviewsData = await getDishReviews(dishId);
-    const ratingData = await getDishRating(dishId);
+        const canteenData = await getCanteenById(dishData.canteen_id);
+        const reviewsData = await getDishReviews(dishId);
+        const ratingData = await getDishRating(dishId);
 
         setDish(dishData);
         setCanteen(canteenData);
@@ -106,10 +106,10 @@ export default function DishDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-transparent flex items-center justify-center">
+      <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载中...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-white/70">加载中...</p>
         </div>
       </main>
     );
@@ -120,14 +120,14 @@ export default function DishDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-transparent">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Navbar />
 
-      <header className="bg-white/55 backdrop-blur-xl border-b border-white/50 shadow-[0_10px_30px_rgba(120,88,58,0.06)] sticky top-16 z-10">
+      <header className="bg-white/10 backdrop-blur-xl border-b border-white/20 sticky top-16 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
             href={canteen ? `/canteen/${canteen.id}` : "/"}
-            className="inline-flex items-center gap-2 text-stone-600 hover:text-stone-900 transition-colors"
+            className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors"
           >
             <span>←</span>
             <span>返回{canteen ? canteen.name : '食堂'}</span>
@@ -136,8 +136,8 @@ export default function DishDetailPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] overflow-hidden mb-6">
-          <div className="h-64 md:h-80 bg-gray-200 relative">
+        <div className="bg-white/10 backdrop-blur-xl rounded-[2rem] border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden mb-6">
+          <div className="h-64 md:h-80 bg-slate-800 relative">
             {dish.image_url ? (
               <Image
                 src={dish.image_url}
@@ -146,8 +146,8 @@ export default function DishDetailPage() {
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100">
-                <span className="text-6xl text-green-400">🍽️</span>
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-800">
+                <span className="text-6xl">🍽️</span>
               </div>
             )}
           </div>
@@ -155,22 +155,22 @@ export default function DishDetailPage() {
           <div className="p-6">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{dish.name}</h1>
-                <span className="inline-block bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm">{dish.category}</span>
+                <h1 className="text-3xl font-bold text-white mb-2">{dish.name}</h1>
+                <span className="inline-block bg-white/20 text-white px-3 py-1 rounded-full text-sm">{dish.category}</span>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-blue-600">¥{dish.price.toFixed(2)}</p>
+                <p className="text-3xl font-bold text-white">¥{dish.price.toFixed(2)}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <StarRating score={avgRating} size="md" />
-                <span className="font-semibold">{avgRating !== null ? avgRating : "暂无评分"}</span>
-                <span className="text-gray-500">({reviews.length} 条评价)</span>
+                <span className="font-semibold text-white">{avgRating !== null ? avgRating : "暂无评分"}</span>
+                <span className="text-white/60">({reviews.length} 条评价)</span>
               </div>
               {canteen && (
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-white/80">
                   <span>🏪</span>
                   <span>{canteen.name}</span>
                 </div>
@@ -179,19 +179,19 @@ export default function DishDetailPage() {
 
             {dish.description && (
               <div className="prose max-w-none">
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">菜品介绍</h2>
-                <p className="text-gray-600 leading-relaxed">{dish.description}</p>
+                <h2 className="text-lg font-semibold text-white mb-2">菜品介绍</h2>
+                <p className="text-white/80 leading-relaxed">{dish.description}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-white/72 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-[0_20px_60px_rgba(120,88,58,0.10)] p-6">
+        <div className="bg-gradient-to-br from-slate-800/90 via-slate-900/90 to-slate-800/90 backdrop-blur-xl rounded-[2rem] border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.4)] p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">用户评价</h2>
+            <h2 className="text-xl font-bold text-white">用户评价</h2>
             <button
               onClick={() => setShowReviewForm(true)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg"
             >
               写评价
             </button>
@@ -199,19 +199,19 @@ export default function DishDetailPage() {
 
           {reviews.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">暂无评价</p>
-              <p className="text-gray-400 text-sm mt-2">成为第一个评价这道菜的人吧！</p>
+              <p className="text-white/60">暂无评价</p>
+              <p className="text-white/40 text-sm mt-2">成为第一个评价这道菜的人吧！</p>
             </div>
           ) : (
             <div className="space-y-4">
               {reviews.map((review: DishReview) => (
-                <div key={review.id} className="border-b border-gray-100 pb-4">
+                <div key={review.id} className="border-b border-white/10 pb-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500">{review.is_anonymous ? '匿' : review.user_name.charAt(0)}</span>
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium">{review.is_anonymous ? '匿' : review.user_name.charAt(0)}</span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{review.is_anonymous ? '匿名用户' : review.user_name}</p>
+                      <p className="font-medium text-white">{review.is_anonymous ? '匿名用户' : review.user_name}</p>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <span
@@ -219,7 +219,7 @@ export default function DishDetailPage() {
                             className={`${
                               star <= review.rating
                                 ? "text-yellow-400"
-                                : "text-yellow-200"
+                                : "text-white/30"
                             }`}
                           >
                             ★
@@ -228,21 +228,21 @@ export default function DishDetailPage() {
                       </div>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-white/50">
                         {new Date(review.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </span>
                       {user && user.id === review.user_id && (
                         <button
                           onClick={() => handleDeleteReview(review.id)}
                           disabled={deletingReviewId === review.id}
-                          className="text-red-500 hover:text-red-700 text-sm transition-colors"
+                          className="text-red-400 hover:text-red-300 text-sm transition-colors"
                         >
                           {deletingReviewId === review.id ? '删除中...' : '删除'}
                         </button>
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-600 ml-13 pl-13">{review.content}</p>
+                  <p className="text-white/90 ml-13 pl-13 leading-relaxed">{review.content}</p>
                 </div>
               ))}
             </div>
@@ -251,13 +251,13 @@ export default function DishDetailPage() {
       </div>
 
       {showReviewForm && dish && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-white/20">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">写评价</h3>
+              <h3 className="text-xl font-bold text-white">写评价</h3>
               <button
                 onClick={() => setShowReviewForm(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-white/60 hover:text-white text-2xl transition-colors"
               >
                 ✕
               </button>
