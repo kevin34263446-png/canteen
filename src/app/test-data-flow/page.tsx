@@ -176,15 +176,15 @@ export default function TestPage() {
       <div style={{ marginTop: '30px', padding: '16px', backgroundColor: '#fff3cd', borderRadius: '6px' }}>
         <h3>💡 使用说明:</h3>
         <ol style={{ lineHeight: '1.8' }}>
-          <li>点击"运行完整测试"按钮</li>
+          <li>点击&quot;运行完整测试&quot;按钮</li>
           <li>观察日志输出，特别关注：
             <ul>
               <li><strong>步骤2:</strong> 检查登录时获取的用户信息是否来自数据库</li>
               <li><strong>步骤4:</strong> 检查更新后的数据是否真正写入了数据库</li>
             </ul>
           </li>
-          <li>如果显示"SUCCESS"，说明数据库操作正常</li>
-          <li>如果显示"FAIL"，说明存在数据同步问题</li>
+          <li>如果显示&quot;SUCCESS&quot;，说明数据库操作正常</li>
+          <li>如果显示&quot;FAIL&quot;，说明存在数据同步问题</li>
         </ol>
       </div>
     </div>
