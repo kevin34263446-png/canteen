@@ -7,6 +7,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
 
+console.log("KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
 type StallKind =
   | "川湘小炒"
   | "面食档"
