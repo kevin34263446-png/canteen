@@ -43,6 +43,36 @@ export default function SettingsPage() {
     const fetchUser = async () => {
       setLoading(true);
       try {
+        // 数据迁移：检查旧的 'user' 键是否存在数据
+        const oldStoredUser = localStorage.getItem('user');
+        if (oldStoredUser) {
+          console.log('🔄 发现旧数据，进行迁移...');
+          try {
+            const userData = JSON.parse(oldStoredUser);
+            // 迁移到新的 'auth_user' 键
+            localStorage.setItem('auth_user', JSON.stringify(userData));
+            // 删除旧键
+            localStorage.removeItem('user');
+            console.log('✅ 数据迁移完成');
+            
+            setUser(userData);
+            setHeight(userData.height || '');
+            setWeight(userData.weight || '');
+            setAge(userData.age || '');
+            setGender(userData.gender || '');
+            setActivityLevel(userData.activity_level || '');
+            setName(userData.name);
+            setAvatarUrl(userData.avatar_url || '');
+            setStudentId(userData.student_id || '');
+            setLoading(false);
+            return;
+          } catch (parseError) {
+            console.error('❌ 解析旧数据失败:', parseError);
+            // 如果解析失败，删除旧键以避免下次再尝试
+            localStorage.removeItem('user');
+          }
+        }
+
         // 优先从 localStorage 读取数据
         const storedUser = localStorage.getItem('auth_user');
         if (storedUser) {
@@ -246,7 +276,7 @@ export default function SettingsPage() {
         const updatedUser = { ...user, ...result.user } as User;
         const newToken = btoa(JSON.stringify({ userId: updatedUser.id }));
         localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
         
         setTimeout(() => setProfileSuccess(''), 3000);
       } else {
