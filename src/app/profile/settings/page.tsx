@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState<boolean>(false);
   const [profileSuccess, setProfileSuccess] = useState<string>('');
   const [profileError, setProfileError] = useState<string>('');
+  const [editingProfile, setEditingProfile] = useState<boolean>(false);
 
   // 基本信息编辑
   const [editingBasic, setEditingBasic] = useState<boolean>(false);
@@ -231,6 +232,16 @@ export default function SettingsPage() {
       if (result.success && result.user) {
         setUser(result.user);
         setProfileSuccess('身体信息保存成功！');
+        
+        // 更新本地状态
+        setHeight(result.user.height || '');
+        setWeight(result.user.weight || '');
+        setAge(result.user.age || '');
+        setGender(result.user.gender || '');
+        setActivityLevel(result.user.activity_level || '');
+        
+        // 关闭编辑模式
+        setEditingProfile(false);
         
         const updatedUser = { ...user, ...result.user } as User;
         const newToken = btoa(JSON.stringify({ userId: updatedUser.id }));
@@ -485,7 +496,17 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">身体信息</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">身体信息</h3>
+              {!editingProfile && (
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  className="text-blue-500 hover:text-blue-600 transition-colors text-sm"
+                >
+                  修改资料
+                </button>
+              )}
+            </div>
             <p className="text-sm text-gray-500 mb-4">完善身体信息，营养看板将根据您的数据计算每日推荐摄入量</p>
 
             {profileSuccess && (
@@ -502,86 +523,132 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">身高 (cm)</label>
-                <input
-                  type="number"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value ? Number(e.target.value) : "")}
-                  placeholder="例如: 175"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-                />
+                {editingProfile ? (
+                  <input
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value ? Number(e.target.value) : "")}
+                    placeholder="例如: 175"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  />
+                ) : (
+                  <p className="text-gray-900">{height || '未设置'}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">体重 (kg)</label>
-                <input
-                  type="number"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value ? Number(e.target.value) : "")}
-                  placeholder="例如: 70"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-                />
+                {editingProfile ? (
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value ? Number(e.target.value) : "")}
+                    placeholder="例如: 70"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  />
+                ) : (
+                  <p className="text-gray-900">{weight || '未设置'}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">年龄</label>
-                <input
-                  type="number"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value ? Number(e.target.value) : "")}
-                  placeholder="例如: 25"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-                />
+                {editingProfile ? (
+                  <input
+                    type="number"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value ? Number(e.target.value) : "")}
+                    placeholder="例如: 25"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  />
+                ) : (
+                  <p className="text-gray-900">{age || '未设置'}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value as 'male' | 'female')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-                >
-                  <option value="">请选择</option>
-                  <option value="male">男</option>
-                  <option value="female">女</option>
-                </select>
+                {editingProfile ? (
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as 'male' | 'female')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  >
+                    <option value="">请选择</option>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900">
+                    {gender === 'male' ? '男' : gender === 'female' ? '女' : '未设置'}
+                  </p>
+                )}
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">活动水平</label>
-                <select
-                  value={activityLevel}
-                  onChange={(e) => setActivityLevel(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-                >
-                  <option value="">请选择</option>
-                  <option value="sedentary">久坐不动（很少或不锻炼）</option>
-                  <option value="light">轻度活动（每周1-3天锻炼）</option>
-                  <option value="moderate">中度活动（每周3-5天锻炼）</option>
-                  <option value="active">高度活动（每周6-7天锻炼）</option>
-                  <option value="very_active">极高活动（专业运动员水平）</option>
-                </select>
+                {editingProfile ? (
+                  <select
+                    value={activityLevel}
+                    onChange={(e) => setActivityLevel(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
+                  >
+                    <option value="">请选择</option>
+                    <option value="sedentary">久坐不动（很少或不锻炼）</option>
+                    <option value="light">轻度活动（每周1-3天锻炼）</option>
+                    <option value="moderate">中度活动（每周3-5天锻炼）</option>
+                    <option value="active">高度活动（每周6-7天锻炼）</option>
+                    <option value="very_active">极高活动（专业运动员水平）</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900">
+                    {activityLevel === 'sedentary' ? '久坐不动（很少或不锻炼）' :
+                     activityLevel === 'light' ? '轻度活动（每周1-3天锻炼）' :
+                     activityLevel === 'moderate' ? '中度活动（每周3-5天锻炼）' :
+                     activityLevel === 'active' ? '高度活动（每周6-7天锻炼）' :
+                     activityLevel === 'very_active' ? '极高活动（专业运动员水平）' : '未设置'}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="mt-4">
-              <button
-                onClick={handleSaveProfile}
-                disabled={savingProfile}
-                className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {savingProfile ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                    <span>保存中...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>💾</span>
-                    <span>保存身体信息</span>
-                  </>
-                )}
-              </button>
-            </div>
+            {editingProfile && (
+              <div className="mt-4 flex gap-3 justify-end">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={savingProfile}
+                  className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingProfile ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                      <span>保存中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💾</span>
+                      <span>保存</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingProfile(false);
+                    if (user) {
+                      setHeight(user.height || '');
+                      setWeight(user.weight || '');
+                      setAge(user.age || '');
+                      setGender(user.gender || '');
+                      setActivityLevel(user.activity_level || '');
+                    }
+                  }}
+                  className="flex items-center gap-2 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <span>✕</span>
+                  <span>取消</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-6">
