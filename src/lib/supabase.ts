@@ -344,7 +344,7 @@ export type User = {
   email: string;
   name: string;
   user_type: string;
-  student_id: string;
+  student_id?: string;
   avatar_url?: string;
   is_admin?: boolean;
   height?: number;
@@ -352,8 +352,8 @@ export type User = {
   age?: number;
   gender?: 'male' | 'female';
   activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 // 认证响应类型
