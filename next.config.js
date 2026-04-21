@@ -9,7 +9,7 @@ try {
 
 const nextConfig = {
   images: {
-    domains: ['via.placeholder.com'],
+    /*domains: ['via.placeholder.com'],*/
     remotePatterns: [
       {
         protocol: 'https',
